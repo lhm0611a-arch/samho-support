@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // DEVELOPMENT MODE: Allow all for prototype without custom auth backend.
+    // 
+    // [PRD 요구사항: Security Rules 명시]
+    // 1. workers 및 reservations 컬렉션: 본인(사번)이 생성한 데이터만 읽기/쓰기 가능. 관리자는 전체 접근 가능.
+    // 2. counseling_tickets 컬렉션:
+    //  - 총괄 관리자(동반성장부): 전체 접근 및 수정 가능.
+    //  - 사내협력사 소장(Sub-Admin): 티켓의 company_code가 로그인한 소장의 company_code와 일치하는 것만 읽기 가능. 단, category가 '정서/심리'인 경우 읽기 불가.
+    // 
+    /* REQUIRED PRODUCTION RULES:
+    match /workers/{workerId} {
+      allow read, write: if request.auth != null && (request.auth.uid == workerId || request.auth.token.role == 'admin');
+    }
+    match /reservations/{reservationId} {
+      allow read, write: if request.auth != null && (request.auth.uid == resource.data.worker_id || request.auth.token.role == 'admin');
+    }
+    match /counseling_tickets/{ticketId} {
+      allow read: if request.auth != null && (
+        request.auth.token.role == 'admin' ||
+        (request.auth.token.role == 'sub-admin' && resource.data.company_code == request.auth.token.company_code && resource.data.category != '정서/심리') ||
+        request.auth.uid == resource.data.worker_id
+      );
+      allow write: if request.auth != null && (request.auth.token.role == 'admin' || request.auth.uid == request.resource.data.worker_id);
+    }
+    match /companies/{companyCode} {
+      allow read: if request.auth != null;
+    }
+    */
+
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

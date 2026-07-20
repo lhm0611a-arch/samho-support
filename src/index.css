@@ -1,0 +1,420 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  
+  --color-apple-dark: #1a1a1f; /* Lighter background */
+  --color-apple-gray: #242429;
+  --color-apple-glass: rgba(40, 40, 48, 0.85); /* Brighter translucent */
+  --color-apple-glass-hover: rgba(50, 50, 58, 0.95);
+  --color-apple-border: rgba(255, 255, 255, 0.75); /* Brighter border */
+  --color-apple-glow: rgba(255, 255, 255, 0.50);
+  
+  /* Redefine gray palette for high contrast dark theme */
+  --color-gray-100: #f8fafc;
+  --color-gray-200: #f1f5f9;
+  --color-gray-300: #e2e8f0;
+  --color-gray-400: #cbd5e1;
+  --color-gray-500: #94a3b8;
+}
+
+@layer base {
+  html {
+    font-size: 13px;
+  }
+  @media (min-width: 1024px) {
+    html {
+      font-size: 13px;
+    }
+  }
+  @media (min-width: 1280px) {
+    html {
+      font-size: 13.5px;
+    }
+  }
+  @media (min-width: 1536px) {
+    html {
+      font-size: 14px;
+    }
+  }
+  @media (min-width: 1920px) {
+    html {
+      font-size: 14.5px;
+    }
+  }
+  @media (min-width: 2560px) {
+    html {
+      font-size: 16px;
+    }
+  }
+  @media (min-width: 3840px) {
+    html {
+      font-size: 18px;
+    }
+  }
+  body {
+    @apply text-base;
+  }
+}
+
+@layer utilities {
+  /* Enhance standard white opacity border classes for darker, more crisp borders */
+  .border-white\/5 {
+    border-color: rgba(255, 255, 255, 0.25) !important;
+  }
+  .border-white\/10 {
+    border-color: rgba(255, 255, 255, 0.40) !important;
+  }
+  .border-white\/15 {
+    border-color: rgba(255, 255, 255, 0.50) !important;
+  }
+  .border-white\/20 {
+    border-color: rgba(255, 255, 255, 0.60) !important;
+  }
+  .border-white\/30 {
+    border-color: rgba(255, 255, 255, 0.75) !important;
+  }
+
+  /* Redefining text-gray utility classes for stronger visibility in dark UI */
+  .text-gray-300 {
+    color: #e2e8f0 !important;
+  }
+  .text-gray-400 {
+    color: #cbd5e1 !important;
+  }
+  .text-gray-500 {
+    color: #94a3b8 !important;
+  }
+
+  .glass-panel {
+    @apply bg-apple-glass border border-apple-border rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.6)];
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+  
+  .glass-panel-hover {
+    @apply hover:bg-apple-glass-hover;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+  
+  .glass-panel-hover:hover {
+    box-shadow: 0 0 0 1px var(--color-apple-glow), 0 8px 30px rgba(0,0,0,0.5);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-[#e2e2e2] to-[#888888];
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+body {
+  @apply bg-apple-dark text-gray-100 font-sans antialiased;
+  margin: 0;
+  padding: 0;
+}
+
+/* FullCalendar Dark Mode Overrides */
+.apple-calendar {
+  --fc-border-color: rgba(255,255,255,0.3);
+  --fc-daygrid-event-dot-width: 8px;
+  --fc-today-bg-color: rgba(255,255,255,0.05);
+  --fc-neutral-bg-color: transparent;
+  --fc-list-event-hover-bg-color: rgba(255,255,255,0.05);
+  --fc-page-bg-color: transparent;
+}
+.apple-calendar .fc-theme-standard td, 
+.apple-calendar .fc-theme-standard th, 
+.apple-calendar .fc-theme-standard .fc-scrollgrid {
+  border-color: var(--fc-border-color);
+}
+.apple-calendar .fc-col-header-cell-cushion,
+.apple-calendar .fc-daygrid-day-number {
+  color: #a3a3a3;
+  font-weight: 500;
+  padding: 12px;
+}
+.apple-calendar .fc-button-primary {
+  background-color: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: white !important;
+  border-radius: 12px !important;
+  text-transform: capitalize;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+.apple-calendar .fc-button-primary:hover {
+  background-color: rgba(255,255,255,0.15) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 4px 15px rgba(0,0,0,0.3);
+}
+.apple-calendar .fc-button-primary:not(:disabled).fc-button-active, 
+.apple-calendar .fc-button-primary:not(:disabled):active {
+  background-color: white !important;
+  color: black !important;
+}
+.apple-calendar .fc-toolbar-title {
+  color: white;
+  font-weight: 300;
+  font-size: 1.75rem !important;
+  letter-spacing: -0.025em;
+}
+
+.apple-calendar .fc-header-toolbar {
+  margin-bottom: 5.5px !important;
+}
+
+.apple-calendar .fc-col-header-cell-cushion {
+  padding: 8px 4px !important;
+  display: inline-block;
+  vertical-align: middle !important;
+}
+
+.apple-calendar th {
+  height: auto !important;
+  vertical-align: middle !important;
+}
+
+.apple-calendar .fc-timegrid-slot-label-cushion,
+.apple-calendar .fc-timegrid-axis-cushion,
+.apple-calendar .fc-list-day-text,
+.apple-calendar .fc-list-day-side-text {
+  color: #a3a3a3;
+}
+.apple-calendar .fc-event {
+  border-radius: 8px;
+  padding: 1px 6px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Lunch Time Background Event Styling */
+.apple-calendar .lunch-time-bg {
+  border: none !important;
+  box-shadow: none !important;
+  position: relative;
+}
+.apple-calendar .lunch-time-bg .fc-event-title {
+  display: none !important;
+}
+
+/* Show the title only on the first day, spanning across */
+.fc-timeGridWeek-view td.fc-timegrid-col:first-of-type .lunch-time-bg::after {
+  content: "점심시간";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: calc(700% + 6px);
+  text-align: center;
+  font-size: 1.1rem;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.fc-timeGridDay-view td.fc-timegrid-col:first-of-type .lunch-time-bg::after {
+  content: "점심시간";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 100%;
+  text-align: center;
+  font-size: 1.1rem;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+  pointer-events: none;
+}
+
+/* Hide internal scrollbars in FullCalendar to rely on main page scroll */
+.fc .fc-scrollgrid-section-header .fc-scroller,
+.fc .fc-scrollgrid-section-all-day .fc-scroller {
+  overflow: hidden !important;
+}
+.fc-scroller::-webkit-scrollbar {
+  display: none !important;
+}
+.fc-scroller {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+@media (max-width: 768px) {
+  .apple-calendar .fc-col-header-cell-cushion {
+    font-size: 1.2rem !important; /* Larger text for dates to fit nicely */
+    font-weight: 600;
+    padding: 8px 4px !important;
+  }
+  .apple-calendar .fc-toolbar {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    font-size: 0.6rem;
+    gap: 4px;
+    margin-bottom: 8px !important;
+  }
+  .apple-calendar .fc-toolbar-title {
+    font-size: 0.85rem !important;
+    white-space: nowrap;
+  }
+  .apple-calendar .fc-button {
+    padding: 0.2rem 0.4rem !important;
+    font-size: 0.65rem !important;
+    height: auto !important;
+    line-height: 1.2 !important;
+    white-space: nowrap;
+  }
+  .apple-calendar .fc-toolbar-chunk {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+}
+
+/* Markdown Styles */
+.markdown-body {
+  color: #e2e8f0;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  color: #fff;
+  font-weight: 700;
+  margin-top: 1.8em;
+  margin-bottom: 0.8em;
+  letter-spacing: -0.02em;
+}
+
+.markdown-body h1 { 
+  font-size: 1.75em; 
+}
+
+.markdown-body h2 { 
+  font-size: 1.35em; 
+  border-bottom: 1px solid rgba(255,255,255,0.1); 
+  padding-bottom: 0.4em; 
+}
+
+.markdown-body h3 { 
+  font-size: 1.15em; 
+}
+
+.markdown-body p {
+  margin-bottom: 1.2em;
+}
+
+.markdown-body ul, .markdown-body ol {
+  margin-bottom: 1.2em;
+  padding-left: 1.8em;
+}
+
+.markdown-body ul {
+  list-style-type: disc;
+}
+
+.markdown-body ol {
+  list-style-type: decimal;
+}
+
+.markdown-body li {
+  margin-bottom: 0.5em;
+}
+
+.markdown-body strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.markdown-body code {
+  background: rgba(255,255,255,0.1);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.markdown-body blockquote {
+  border-left: 4px solid #3b82f6;
+  padding-left: 1.2em;
+  color: #94a3b8;
+  margin: 1.5em 0;
+  background: rgba(59,130,246,0.05);
+  padding-top: 0.8em;
+  padding-bottom: 0.8em;
+  border-radius: 0 8px 8px 0;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 2em 0;
+  font-size: 0.95em;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.markdown-body th, .markdown-body td {
+  padding: 14px 18px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-right: 1px solid rgba(255,255,255,0.05);
+  vertical-align: middle;
+}
+
+.markdown-body th:last-child, .markdown-body td:last-child {
+  border-right: none;
+}
+
+.markdown-body tr:last-child td {
+  border-bottom: none;
+}
+
+.markdown-body th {
+  background-color: rgba(255,255,255,0.06);
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.markdown-body tr:hover {
+  background-color: rgba(255,255,255,0.025);
+}
+
+
+html, body {
+  overscroll-behavior-y: none;
+  height: 100%;
+  overflow: hidden;
+}
+
+div#root:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3) > div:nth-of-type(1) > button:nth-of-type(1) {
+  width: 48.04259999999999px;
+}
+
+div#root:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3) > div:nth-of-type(1) > button:nth-of-type(3) {
+  width: 63px;
+}

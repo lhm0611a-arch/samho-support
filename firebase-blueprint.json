@@ -1,0 +1,92 @@
+{
+  "project_id": "demo-fics",
+  "collections": [
+    {
+      "name": "workers",
+      "fields": [
+        { "name": "uid", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "company_code", "type": "string" }
+      ]
+    },
+    {
+      "name": "reservations",
+      "fields": [
+        { "name": "worker_id", "type": "string" },
+        { "name": "date", "type": "string" },
+        { "name": "time", "type": "string" },
+        { "name": "status", "type": "string" }
+      ]
+    },
+    {
+      "name": "counseling_tickets",
+      "fields": [
+        { "name": "worker_id", "type": "string" },
+        { "name": "company_code", "type": "string" },
+        { "name": "category", "type": "string" },
+        { "name": "status", "type": "string" },
+        { "name": "summary", "type": "string" },
+        { "name": "urgency", "type": "string" },
+        { "name": "red_flag", "type": "boolean" },
+        { "name": "required_action", "type": "string" }
+      ]
+    },
+    {
+      "name": "companies",
+      "fields": [
+        { "name": "company_code", "type": "string" },
+        { "name": "name", "type": "string" }
+      ]
+    }
+  ],
+  "security_rules": [
+    {
+      "collection": "workers",
+      "rules": [
+        {
+          "type": "read",
+          "condition": "request.auth != null && (request.auth.uid == resource.data.uid || request.auth.token.role == 'admin')"
+        },
+        {
+          "type": "write",
+          "condition": "request.auth != null && (request.auth.uid == request.resource.data.uid || request.auth.token.role == 'admin')"
+        }
+      ]
+    },
+    {
+      "collection": "reservations",
+      "rules": [
+        {
+          "type": "read",
+          "condition": "request.auth != null && (request.auth.uid == resource.data.worker_id || request.auth.token.role == 'admin')"
+        },
+        {
+          "type": "write",
+          "condition": "request.auth != null && (request.auth.uid == request.resource.data.worker_id || request.auth.token.role == 'admin')"
+        }
+      ]
+    },
+    {
+      "collection": "counseling_tickets",
+      "rules": [
+        {
+          "type": "read",
+          "condition": "request.auth != null && (request.auth.token.role == 'admin' || (request.auth.token.role == 'sub-admin' && resource.data.company_code == request.auth.token.company_code && resource.data.category != '정서/심리'))"
+        },
+        {
+          "type": "write",
+          "condition": "request.auth != null && request.auth.token.role == 'admin'"
+        }
+      ]
+    },
+    {
+      "collection": "companies",
+      "rules": [
+        {
+          "type": "read",
+          "condition": "request.auth != null"
+        }
+      ]
+    }
+  ]
+}
