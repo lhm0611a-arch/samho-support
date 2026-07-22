@@ -9,6 +9,7 @@ import { useFirestore } from '../hooks/useFirestore';
 import { useScheduleStore } from '../store/scheduleStore';
 import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
+import { CATEGORIES } from '../constants';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 
 interface Props {
@@ -16,7 +17,11 @@ interface Props {
   onClose: () => void;
 }
 
-export const TicketDetailModal: React.FC<Props> = ({ ticket, onClose }) => {
+import { useTicketStore } from '../store/ticketStore';
+export const TicketDetailModal: React.FC<Props> = ({ ticket: initialTicket, onClose }) => {
+  const allTickets = useTicketStore(state => state.tickets);
+  const ticket = allTickets.find(t => t.id === initialTicket.id) || initialTicket;
+
 
   const timeOptions = Array.from({ length: 19 }, (_, i) => {
     const h = Math.floor(i / 2) + 8;
@@ -305,7 +310,24 @@ export const TicketDetailModal: React.FC<Props> = ({ ticket, onClose }) => {
             </div>
             <div>
               <p className="text-[11px] md:text-xs text-gray-400 font-medium tracking-wide uppercase mb-0.5">상담 유형</p>
-              <p className="text-gray-300 font-medium text-sm">{ticket.category || '-'}</p>
+              <select
+                value={ticket.category || ''}
+                onChange={(e) => {
+                  const newCategory = e.target.value;
+                  const CRITICAL_KEYWORDS = ['임금체불', '폭언', '폭행', '범죄', '퇴사', '산재', '치료', '사망', '사고', '우울', '정서/심리'];
+                  const isRedFlag = CRITICAL_KEYWORDS.some(k => newCategory.includes(k));
+                  updateTicket(ticket.id!, { 
+                    category: newCategory,
+                    red_flag: isRedFlag
+                  });
+                }}
+                className="bg-apple-dark border border-apple-border rounded-lg px-2 py-1 text-sm text-gray-200 focus:outline-none focus:border-white/30 transition-colors"
+              >
+                <option value="">유형 선택</option>
+                {CATEGORIES.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
             </div>
             <div>
               <p className="text-[11px] md:text-xs text-gray-400 font-medium tracking-wide uppercase mb-0.5">소속 업체</p>
