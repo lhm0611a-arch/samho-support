@@ -7,7 +7,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { useAuthStore } from '../store/authStore';
 import { Calendar as CalendarIcon, AlertTriangle, User, X } from 'lucide-react';
-import { DUMMY_COMPANIES, CATEGORIES, COUNTRY_COLORS } from '../constants';
+import { DUMMY_COMPANIES, CATEGORIES, COUNTRY_COLORS, cleanCountryName } from '../constants';
 import { useScheduleStore } from '../store/scheduleStore';
 import { useTicketStore } from '../store/ticketStore';
 import { useCounselorStore } from '../store/counselorStore';
@@ -473,7 +473,7 @@ export const ScheduleManager = () => {
                 ) : (
                   counselors.filter(c => c.country !== '한국' && !c.id.toLowerCase().startsWith('admin')).map(c => (
                     <option key={c.id} value={c.id} className="bg-[#08172c]">
-                      {c.country} - {c.name} {c.isRetired ? '(퇴사)' : ''}
+                      {cleanCountryName(c.country)} - {c.name} {c.isRetired ? '(퇴사)' : ''}
                     </option>
                   ))
                 )}
@@ -862,7 +862,7 @@ export const ScheduleManager = () => {
                   onChange={e => setEmCounselor(e.target.value)}
                   className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-red-500 transition-colors appearance-none"
                 >
-                  {counselors.filter(c => !c.isRetired && c.country !== '한국' && !c.id.toLowerCase().startsWith('admin')).map(c => <option key={c.id} value={c.id} className="bg-apple-dark">{c.country} - {c.name}</option>)}
+                  {counselors.filter(c => !c.isRetired && c.country !== '한국' && !c.id.toLowerCase().startsWith('admin')).map(c => <option key={c.id} value={c.id} className="bg-apple-dark">{cleanCountryName(c.country)} - {c.name}</option>)}
                 </select>
               </div>
 

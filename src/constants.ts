@@ -33,3 +33,15 @@ export const DUMMY_COUNSELORS: (Counselor & { country: string })[] = [
 ];
 
 export const CATEGORIES = ['임금체불', '비자/체류', '폭언/폭행', '산재/치료', '기숙사', '정서/심리', '기타'];
+
+/**
+ * 국가명 앞의 불필요한 영문 약자(예: vn베트남, VN 베트남, np네팔 등)를 정리하여
+ * 순수 한글 국가명만 반환하는 함수
+ */
+export const cleanCountryName = (country?: string): string => {
+  if (!country) return '-';
+  const trimmed = country.trim();
+  // 영문 1~4자 약자(대소문자 무관) + 공백/특수문자 뒤 한글이 올 경우 한글만 추출
+  const cleaned = trimmed.replace(/^[a-zA-Z]{1,4}[\s_·\-\/]*([가-힣]+)/, '$1').trim();
+  return cleaned || trimmed;
+};

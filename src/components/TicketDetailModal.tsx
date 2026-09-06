@@ -9,7 +9,7 @@ import { useFirestore } from '../hooks/useFirestore';
 import { useScheduleStore } from '../store/scheduleStore';
 import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
-import { CATEGORIES } from '../constants';
+import { CATEGORIES, cleanCountryName } from '../constants';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { isCounselorId } from '../utils/counselorHelper';
 
@@ -315,7 +315,7 @@ export const TicketDetailModal: React.FC<Props> = ({ ticket: initialTicket, onCl
             </div>
             <div>
               <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">국가</p>
-              <p className="text-[#cbd5e1] font-medium text-sm">{ticket.country || '-'}</p>
+              <p className="text-[#cbd5e1] font-medium text-sm">{cleanCountryName(ticket.country)}</p>
             </div>
             <div>
               <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">상담 유형</p>
@@ -384,7 +384,7 @@ export const TicketDetailModal: React.FC<Props> = ({ ticket: initialTicket, onCl
                   >
                     <option value="">배정 안됨</option>
                     {counselors.filter(c => isCounselorId(c.id) && (!ticket.country || c.country === ticket.country) && !c.isRetired).map(c => (
-                      <option key={c.id} value={c.id}>{c.name} ({c.country})</option>
+                      <option key={c.id} value={c.id}>{c.name} ({cleanCountryName(c.country)})</option>
                     ))}
                   </select>
                   {ticket.status === '접수대기' && (

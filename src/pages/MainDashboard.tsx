@@ -16,42 +16,7 @@ import { useFirestore } from '../hooks/useFirestore';
 import { TicketDetailModal } from '../components/TicketDetailModal';
 import { isCounselorId } from '../utils/counselorHelper';
 import { HDHyundaiCI } from '../components/HDHyundaiCI';
-
-const COUNTRY_FLAGS: Record<string, string> = {
-  '베트남': '🇻🇳',
-  'Vietnam': '🇻🇳',
-  '네팔': '🇳🇵',
-  'Nepal': '🇳🇵',
-  '우즈베키스탄': '🇺🇿',
-  '우즈벡': '🇺🇿',
-  'Uzbekistan': '🇺🇿',
-  '캄보디아': '🇰🇭',
-  'Cambodia': '🇰🇭',
-  '인도네시아': '🇮🇩',
-  'Indonesia': '🇮🇩',
-  '미얀마': '🇲🇲',
-  'Myanmar': '🇲🇲',
-  '스리랑카': '🇱🇰',
-  'Sri Lanka': '🇱🇰',
-  '태국': '🇹🇭',
-  'Thailand': '🇹🇭',
-  '필리핀': '🇵🇭',
-  'Philippines': '🇵🇭',
-  '중국': '🇨🇳',
-  'China': '🇨🇳',
-  '몽골': '🇲🇳',
-  'Mongolia': '🇲🇳',
-  '한국': '🇰🇷',
-  'Korea': '🇰🇷',
-};
-
-const getCountryFlag = (country?: string) => {
-  if (!country) return '🌐';
-  for (const [key, flag] of Object.entries(COUNTRY_FLAGS)) {
-    if (country.includes(key)) return flag;
-  }
-  return '🌐';
-};
+import { cleanCountryName } from '../constants';
 
 const getCategoryStyle = (category?: string) => {
   switch (category) {
@@ -703,9 +668,8 @@ export const MainDashboard = () => {
                     </div>
                     
                     <div className="flex flex-wrap gap-1.5 mb-2">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-white text-xs bg-[#04162e] border border-cyan-500/20 shadow-sm">
-                        <span>{getCountryFlag(ticket.country)}</span>
-                        <span>{ticket.country}</span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded text-white text-xs bg-[#04162e] border border-cyan-500/20 shadow-sm font-semibold">
+                        <span>{cleanCountryName(ticket.country)}</span>
                       </span>
                       {ticket.visa_type && <span className="inline-flex items-center px-2 py-0.5 rounded text-[#94a3b8] text-xs bg-[#051326] border border-[#1e3a5f]">{ticket.visa_type}</span>}
                       <span className={clsx("inline-flex items-center px-2.5 py-0.5 rounded text-xs border font-medium", getCategoryStyle(ticket.category))}>
@@ -775,9 +739,8 @@ export const MainDashboard = () => {
                         <td className="px-4 py-2.5 text-[#94a3b8] text-center text-xs lg:text-sm font-medium">{ticket.created_at ? safeFormat(ticket.created_at, 'yy.MM.dd HH:mm') : '-'}</td>
                         <td className="px-4 py-2.5 text-[#38bdf8] font-bold text-center text-xs lg:text-sm">{ticket.reservation_time ? safeFormat(ticket.reservation_time, 'yy.MM.dd HH:mm') : '미지정'}</td>
                         <td className="px-4 py-2.5 text-center">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#04162e] border border-cyan-500/20 text-[#f8fafc] text-xs font-semibold shadow-sm">
-                            <span className="text-sm">{getCountryFlag(ticket.country)}</span>
-                            <span>{ticket.country || '-'}</span>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-[#04162e] border border-cyan-500/20 text-[#f8fafc] text-xs font-semibold shadow-sm">
+                            <span>{cleanCountryName(ticket.country)}</span>
                           </span>
                         </td>
                         <td className="px-4 py-2.5 text-center text-[#94a3b8] text-xs lg:text-sm font-medium">

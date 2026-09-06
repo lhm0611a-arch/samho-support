@@ -6,7 +6,7 @@ import { useTicketStore } from '../store/ticketStore';
 import { useScheduleStore } from '../store/scheduleStore';
 import { useAuthStore } from '../store/authStore';
 import { useCounselorStore } from '../store/counselorStore';
-import { CATEGORIES } from '../constants';
+import { CATEGORIES, cleanCountryName } from '../constants';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { Users, Clock, Briefcase, Calendar as CalendarIcon, Filter, FileText, X } from 'lucide-react';
 import { format, subDays, isAfter, startOfMonth, isSameDay } from 'date-fns';
@@ -252,12 +252,14 @@ export const CounselorLoadDashboard = () => {
   return (
     <div className="flex flex-col h-full gap-4 md:gap-6 animate-fade-in-up pb-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <HDHyundaiCI size="md" subtitle="업무 실적 통계" />
-          <div className="hidden sm:block h-6 w-[1px] bg-slate-700 mx-1" />
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3.5 sm:gap-4 shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <HDHyundaiCI size="sm" subtitle="업무 실적" />
+            <div className="hidden sm:block h-6 w-[1px] bg-slate-700 mx-0.5" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug">
               {isCounselor ? '나의 통역 및 상담 실적' : '통역위원 종합 업무 실적'}
             </h2>
             <p className="text-[11px] font-medium text-slate-300">
@@ -266,31 +268,31 @@ export const CounselorLoadDashboard = () => {
           </div>
         </div>
         
-        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 w-full md:w-auto">
           {!isCounselor && (
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <div className="relative flex-1 sm:flex-initial">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <select
                 value={selectedCounselorId}
                 onChange={(e) => setSelectedCounselorId(e.target.value)}
-                className="w-full md:w-auto pl-9 pr-8 py-2 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500/50 appearance-none"
+                className="w-full sm:w-auto pl-9 pr-8 py-2 bg-[#04162e] border border-cyan-500/20 rounded-xl text-xs sm:text-sm font-semibold text-white focus:outline-none focus:border-cyan-400 appearance-none shadow-sm"
               >
                 <option value="all">전체 통역위원</option>
                 {counselors.filter(c => isCounselorId(c.id)).map(c => (
-                  <option key={c.id} value={c.id}>{c.name} ({c.country})</option>
+                  <option key={c.id} value={c.id}>{c.name} ({cleanCountryName(c.country)})</option>
                 ))}
               </select>
             </div>
           )}
-          <div className="flex bg-black/40 p-1 rounded-xl border border-white/10 w-full md:w-auto overflow-x-auto">
+          <div className="flex bg-[#04162e] p-1 rounded-xl border border-cyan-500/20 w-full sm:w-auto overflow-x-auto shadow-sm">
             {['day', 'week', 'month', 'all'].map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all capitalize whitespace-nowrap ${
+                className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all capitalize whitespace-nowrap text-center ${
                   period === p 
-                    ? 'bg-blue-500/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)]' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    ? 'bg-cyan-500 text-slate-950 shadow-md' 
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
                 }`}
               >
                 {p === 'day' ? '오늘' : p === 'week' ? '주간' : p === 'month' ? '월간' : '전체'}

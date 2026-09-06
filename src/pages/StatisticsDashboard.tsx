@@ -5,7 +5,7 @@ import { useTicketStore } from '../store/ticketStore';
 import { useCounselorStore } from '../store/counselorStore';
 import { useScheduleStore } from '../store/scheduleStore';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
-import { COUNTRIES, CATEGORIES } from '../constants';
+import { COUNTRIES, CATEGORIES, cleanCountryName } from '../constants';
 import { Brain, TrendingUp, AlertTriangle, Users, Download, Calendar, X, FileText, Mail, Printer } from 'lucide-react';
 import { format, subDays, isSameDay, startOfYear, startOfMonth, subMonths, isAfter } from 'date-fns';
 import Markdown from 'react-markdown';
@@ -87,7 +87,7 @@ export const StatisticsDashboard = () => {
     }
 
     const byCountry = COUNTRIES.map(country => {
-      const count = filteredTickets.filter(t => t.country === country).length;
+      const count = filteredTickets.filter(t => cleanCountryName(t.country) === country).length;
       return { name: country, count };
     }).filter(item => item.count > 0);
 
@@ -118,7 +118,7 @@ export const StatisticsDashboard = () => {
       .map(e => {
         const cInfo = counselors.find(c => c.id === e.counselorId);
         return {
-          통역사: cInfo ? `${cInfo.country} - ${cInfo.name}` : '미상',
+          통역사: cInfo ? `${cleanCountryName(cInfo.country)} - ${cInfo.name}` : '미상',
           업무유형: e.type,
           업무제목: e.title,
           업무실적: e.performanceDetail

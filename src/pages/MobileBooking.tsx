@@ -7,7 +7,7 @@ import { db } from '../lib/firebase';
 import { useAuthStore } from '../store/authStore';
 import { Company, Counselor } from '../types';
 import { searchCompanies, debounce } from '../lib/hangulSearch';
-import { DUMMY_COMPANIES, CATEGORIES, COUNTRIES } from '../constants';
+import { DUMMY_COMPANIES, CATEGORIES, COUNTRIES, cleanCountryName } from '../constants';
 import { useCounselorStore } from '../store/counselorStore';
 import { useScheduleStore } from '../store/scheduleStore';
 import { useTicketStore } from '../store/ticketStore';
@@ -287,12 +287,12 @@ export const MobileBooking = () => {
 
       
       {/* HD Hyundai Samho Official CI Brand Banner */}
-      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
-        <div className="p-2 px-3.5 bg-[#031326]/90 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-xl flex items-center gap-3">
+      <div className="px-4 pt-3 pb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="p-2 px-3 bg-[#031326]/90 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-xl flex items-center gap-2 max-w-[calc(100%-110px)] overflow-hidden">
           <HDHyundaiCI size="sm" subtitle="외국인지원센터" />
         </div>
-        <div className="text-right">
-          <span className="text-[10px] text-cyan-300 font-mono font-bold bg-[#031326]/90 px-2.5 py-1 rounded-lg border border-cyan-500/30 shadow-md">
+        <div className="text-right shrink-0">
+          <span className="text-[10px] text-cyan-300 font-mono font-bold bg-[#031326]/90 px-2.5 py-1.5 rounded-lg border border-cyan-500/30 shadow-md whitespace-nowrap">
             BOOKING PORTAL
           </span>
         </div>
@@ -313,7 +313,7 @@ export const MobileBooking = () => {
           >
             <div className="flex items-center justify-center gap-2">
               <Plus className={`w-4 h-4 ${activeTab === 'book' ? 'text-slate-950' : 'text-cyan-400'}`} />
-              <span>{t('nav.book') || '예약하기'}</span>
+              <span>{t('nav.new_booking') || '예약하기'}</span>
             </div>
           </button>
           <button
@@ -367,7 +367,7 @@ export const MobileBooking = () => {
                       {ticket.category} {t('my_bookings.counseling') || '상담'}
                       {ticket.urgency === 'high' && <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded text-[10px] font-bold uppercase">Urgent</span>}
                     </h3>
-                    <p className="text-xs text-gray-400 mt-1">{ticket.country} · {ticket.company_code} {ticket.visa_type ? `· ${ticket.visa_type}` : ''}</p>
+                    <p className="text-xs text-gray-400 mt-1">{cleanCountryName(ticket.country)} · {ticket.company_code} {ticket.visa_type ? `· ${ticket.visa_type}` : ''}</p>
                   </div>
                   <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
                     ticket.status === '접수대기' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.2)]' :

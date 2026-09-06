@@ -6,7 +6,7 @@ interface Props {
   showControls?: boolean;
 }
 
-export const BackgroundCarousel: React.FC<Props> = ({ showControls = true }) => {
+export const BackgroundCarousel: React.FC<Props> = ({ showControls = false }) => {
   const {
     slides,
     intervalSeconds,

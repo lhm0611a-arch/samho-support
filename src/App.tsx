@@ -43,7 +43,7 @@ export default function App() {
   if (!user) {
     return (
       <div className="fixed top-0 left-0 w-full h-[100dvh] text-[#e2e8f0] flex flex-col font-sans overflow-hidden overscroll-none touch-none relative">
-        <BackgroundCarousel />
+        <BackgroundCarousel showControls={false} />
         <div className="flex-1 w-full h-full overflow-y-auto overscroll-none touch-auto relative z-10">
           <Login />
         </div>
@@ -54,7 +54,7 @@ export default function App() {
   if (role === 'admin' || role === 'sub-admin' || role === 'counselor') {
     return (
       <div className="h-[100dvh] w-full flex overflow-hidden font-sans text-[#e2e8f0] relative">
-        <BackgroundCarousel />
+        <BackgroundCarousel showControls={role === 'admin' && activeTab === 'settings'} />
         {/* Sidebar Overlay */}
         {isSidebarOpen && (
           <div 
@@ -65,13 +65,15 @@ export default function App() {
 
         {/* Sidebar */}
         <aside className={clsx(
-          "fixed inset-y-0 left-0 z-30 w-64 bg-[#08172c]/95 backdrop-blur-xl border-r border-[#1e3a5f] text-gray-300 flex flex-col shrink-0 transition-transform duration-300 ease-in-out shadow-2xl",
+          "fixed inset-y-0 left-0 z-30 w-72 bg-[#08172c]/95 backdrop-blur-xl border-r border-[#1e3a5f] text-gray-300 flex flex-col shrink-0 transition-transform duration-300 ease-in-out shadow-2xl overflow-hidden",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}>
-          <div className="h-20 flex items-center justify-between px-4 border-b border-[#1e3a5f] bg-[#051326]/75">
-            <HDHyundaiCI size="md" subtitle="외국인지원센터" />
+          <div className="h-20 flex items-center justify-between px-4 border-b border-[#1e3a5f] bg-[#051326]/90 shrink-0">
+            <div className="flex-1 min-w-0 pr-2">
+              <HDHyundaiCI size="sm" layout="vertical" subtitle="외국인지원센터" />
+            </div>
             <button 
-              className="text-gray-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/10" 
+              className="text-gray-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/10 shrink-0" 
               onClick={() => setIsSidebarOpen(false)}
               aria-label="사이드바 닫기"
             >
@@ -226,7 +228,7 @@ export default function App() {
 
   return (
     <div className="fixed top-0 left-0 w-full h-[100dvh] text-[#e2e8f0] flex flex-col font-sans overflow-hidden overscroll-none touch-none relative">
-      <BackgroundCarousel />
+      <BackgroundCarousel showControls={false} />
       <header className="absolute top-0 right-0 p-4 md:p-8 z-20 flex items-center gap-2 pointer-events-none w-full justify-end">
         <div className="pointer-events-auto mr-auto">
           <PushNotificationManager />
