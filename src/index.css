@@ -1,0 +1,583 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+@import "tailwindcss";
+
+/* Tailwind v4 @theme 또는 Tailwind v3 theme.extend 변수 */
+@theme {
+  --font-sans: 'HD Hyundai', 'Noto Sans KR', ui-sans-serif, system-ui, sans-serif;
+  --font-kor: 'HD Hyundai', 'Noto Sans KR', sans-serif;
+  
+  /* Official Brand Colors */
+  --color-hd-navy: #002c5f;
+  --color-hd-green: #00a859;
+
+  /* Palette & Tokens */
+  --color-surface-dark: #030f1c;
+  --color-card-dark: #08172c;
+  --color-border-dark: #1e3a5f;
+  --color-input-focus: #051326;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-tech-cyan: #38bdf8;
+
+  /* System Color Mappings */
+  --color-apple-dark: #030f1c;
+  --color-apple-gray: #08172c;
+  --color-apple-glass: rgba(8, 23, 44, 0.9);
+  --color-apple-glass-hover: rgba(14, 38, 70, 0.95);
+  --color-apple-border: #1e3a5f;
+  --color-apple-glow: rgba(56, 189, 248, 0.35);
+
+  --color-gray-100: #f8fafc;
+  --color-gray-200: #e2e8f0;
+  --color-gray-300: #cbd5e1;
+  --color-gray-400: #94a3b8;
+  --color-gray-500: #64748b;
+}
+
+/* Base Body Style */
+@layer base {
+  *, *::before, *::after {
+    font-family: 'HD Hyundai', 'Noto Sans KR', sans-serif;
+  }
+
+  /* Preserve FullCalendar icon font */
+  .fc-icon, .fc .fc-icon, .fc-icon::before, .fc-icon::after {
+    font-family: 'fcicons' !important;
+  }
+
+  body {
+    background-color: #030f1c;
+    color: #e2e8f0;
+    font-family: 'HD Hyundai', 'Noto Sans KR', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-size: 16px;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    background-image: 
+      radial-gradient(ellipse at 50% 0%, rgba(0, 44, 95, 0.45) 0%, transparent 70%),
+      linear-gradient(to bottom, rgba(3, 15, 28, 0.87), rgba(3, 15, 28, 0.93)),
+      url('/yard.png');
+    background-size: cover;
+    background-position: center top;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+  }
+
+  button, input, select, textarea, table, th, td, h1, h2, h3, h4, h5, h6, p, span, div {
+    font-family: inherit;
+    word-break: keep-all;
+  }
+}
+
+/* 톤앤매너 UI 컴포넌트 세트 */
+@layer components {
+  .yard-bg {
+    background-color: #030f1c;
+    background-image: 
+      radial-gradient(ellipse at 50% 0%, rgba(0, 44, 95, 0.45) 0%, transparent 70%),
+      linear-gradient(to bottom, rgba(3, 15, 28, 0.87), rgba(3, 15, 28, 0.93)),
+      url('/yard.png');
+    background-size: cover;
+    background-position: center top;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+
+  /* 1. 패널 / 카드 컴포넌트 */
+  .dx-card, .hud-card {
+    background: rgba(8, 23, 44, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid #1e3a5f;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+  }
+  .dx-card:hover, .hud-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    border-color: #3b82f6;
+  }
+
+  /* 2. 입력 필드 (Input / Select) */
+  .dx-input, .hud-input {
+    width: 100%;
+    background-color: #030f1c;
+    border: 1px solid #1e3a5f;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #f8fafc;
+    transition: all 0.2s;
+  }
+  .dx-input:focus, .hud-input:focus {
+    background-color: #051326;
+    border-color: #0ea5e9;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+  }
+
+  /* 3. 시그니처 버튼 (HD Navy -> Green 그라디언트) */
+  .dx-btn-primary, .hud-btn {
+    background: linear-gradient(to right, #003770, #00a859);
+    color: #ffffff;
+    font-weight: 700;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    border: none;
+    font-size: 1rem;
+    padding: 0.75rem 1.5rem;
+  }
+  .dx-btn-primary:hover, .hud-btn:hover {
+    background: linear-gradient(to right, #004b99, #00c268);
+    transform: translateY(-1px);
+  }
+
+  /* 4. 내비게이션 탭 버튼 */
+  .nav-btn {
+    color: #94a3b8;
+    font-weight: 700;
+    transition: all 0.2s;
+    border-radius: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9375rem;
+  }
+  .nav-btn:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .nav-btn.active {
+    background: rgba(14, 165, 233, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+  }
+
+  /* 5. 고밀도 데이터 테이블 */
+  .dx-table-wrapper {
+    border-radius: 0.75rem;
+    border: 1px solid #1e3a5f;
+    background: #08172c;
+    overflow: hidden;
+  }
+  .dx-table th {
+    background: #051326;
+    color: #38bdf8;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 6px 10px;
+    border-bottom: 1px solid #1e3a5f;
+  }
+  .dx-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #1e3a5f;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #f8fafc;
+  }
+  .dx-table tr:hover td {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+  .dx-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* 6. 상태 판정 뱃지 시스템 */
+  .type-badge {
+    padding: 3px 8px;
+    border-radius: 0.375rem;
+    font-size: 11px;
+    font-weight: 800;
+    border: 1px solid;
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .badge-pass {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: #4ade80;
+    border-color: rgba(74, 222, 128, 0.3);
+  }
+  .badge-cond {
+    background-color: rgba(234, 179, 8, 0.1);
+    color: #facc15;
+    border-color: rgba(250, 204, 21, 0.3);
+  }
+  .badge-fail {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.3);
+  }
+  .badge-wait {
+    background-color: rgba(100, 116, 139, 0.1);
+    color: #94a3b8;
+    border-color: rgba(148, 163, 184, 0.3);
+  }
+
+  /* 7. 커스텀 틴트 스크롤바 */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #051326;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2563eb;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6;
+  }
+}
+
+@layer utilities {
+  .border-white\/5 {
+    border-color: rgba(30, 58, 95, 0.4) !important;
+  }
+  .border-white\/10 {
+    border-color: #1e3a5f !important;
+  }
+  .border-white\/15 {
+    border-color: #1e3a5f !important;
+  }
+  .border-white\/20 {
+    border-color: #2a5282 !important;
+  }
+  .border-white\/30 {
+    border-color: #3b82f6 !important;
+  }
+
+  .text-gray-300 {
+    color: #cbd5e1 !important;
+  }
+  .text-gray-400 {
+    color: #94a3b8 !important;
+  }
+  .text-gray-500 {
+    color: #64748b !important;
+  }
+
+  .glass-panel {
+    background: #08172c;
+    border: 1px solid #1e3a5f;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+  }
+  
+  .glass-panel-hover {
+    transition: all 0.2s ease;
+  }
+  
+  .glass-panel-hover:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#f8fafc] via-[#38bdf8] to-[#00c268];
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* FullCalendar Dark Mode Overrides */
+.apple-calendar {
+  --fc-border-color: #1e3a5f;
+  --fc-daygrid-event-dot-width: 8px;
+  --fc-today-bg-color: rgba(56, 189, 248, 0.08);
+  --fc-neutral-bg-color: #08172c;
+  --fc-list-event-hover-bg-color: rgba(255,255,255,0.05);
+  --fc-page-bg-color: transparent;
+}
+.apple-calendar .fc-theme-standard td, 
+.apple-calendar .fc-theme-standard th, 
+.apple-calendar .fc-theme-standard .fc-scrollgrid {
+  border-color: var(--fc-border-color);
+}
+.apple-calendar .fc-col-header-cell-cushion {
+  color: #38bdf8;
+  font-weight: 700;
+  padding: 10px;
+}
+.apple-calendar .fc-daygrid-day-number {
+  color: #94a3b8;
+  font-weight: 500;
+  padding: 10px;
+}
+.apple-calendar .fc-button-primary {
+  background-color: #08172c !important;
+  border-color: #1e3a5f !important;
+  color: #f8fafc !important;
+  border-radius: 8px !important;
+  text-transform: capitalize;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.apple-calendar .fc-button-primary:hover {
+  background-color: #003770 !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 1px #3b82f6, 0 4px 12px rgba(0, 44, 95, 0.4);
+}
+.apple-calendar .fc-button-primary:not(:disabled).fc-button-active, 
+.apple-calendar .fc-button-primary:not(:disabled):active {
+  background: linear-gradient(to right, #003770, #00a859) !important;
+  color: #ffffff !important;
+  border-color: #00a859 !important;
+}
+.apple-calendar .fc-toolbar-title {
+  color: #f8fafc;
+  font-weight: 700;
+  font-size: 1.5rem !important;
+  letter-spacing: -0.025em;
+}
+
+.apple-calendar .fc-header-toolbar {
+  margin-bottom: 8px !important;
+}
+
+.apple-calendar .fc-col-header-cell-cushion {
+  padding: 8px 4px !important;
+  display: inline-block;
+  vertical-align: middle !important;
+}
+
+.apple-calendar th {
+  background: #051326;
+  height: auto !important;
+  vertical-align: middle !important;
+}
+
+.apple-calendar .fc-timegrid-slot-label-cushion,
+.apple-calendar .fc-timegrid-axis-cushion,
+.apple-calendar .fc-list-day-text,
+.apple-calendar .fc-list-day-side-text {
+  color: #94a3b8;
+}
+.apple-calendar .fc-event {
+  border-radius: 6px;
+  padding: 2px 6px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Lunch Time Background Event Styling */
+.apple-calendar .lunch-time-bg {
+  border: none !important;
+  box-shadow: none !important;
+  position: relative;
+}
+.apple-calendar .lunch-time-bg .fc-event-title {
+  display: none !important;
+}
+
+.fc-timeGridWeek-view td.fc-timegrid-col:first-of-type .lunch-time-bg::after {
+  content: "점심시간";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: calc(700% + 6px);
+  text-align: center;
+  font-size: 1.1rem;
+  letter-spacing: 0.2em;
+  color: rgba(56, 189, 248, 0.4);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.fc-timeGridDay-view td.fc-timegrid-col:first-of-type .lunch-time-bg::after {
+  content: "점심시간";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 100%;
+  text-align: center;
+  font-size: 1.1rem;
+  letter-spacing: 0.2em;
+  color: rgba(56, 189, 248, 0.4);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.fc .fc-scrollgrid-section-header .fc-scroller,
+.fc .fc-scrollgrid-section-all-day .fc-scroller {
+  overflow: hidden !important;
+}
+.fc-scroller::-webkit-scrollbar {
+  display: none !important;
+}
+.fc-scroller {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+@media (max-width: 768px) {
+  .apple-calendar .fc-col-header-cell-cushion {
+    font-size: 1.1rem !important;
+    font-weight: 700;
+    padding: 8px 4px !important;
+  }
+  .apple-calendar .fc-toolbar {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    font-size: 0.65rem;
+    gap: 4px;
+    margin-bottom: 8px !important;
+  }
+  .apple-calendar .fc-toolbar-title {
+    font-size: 0.95rem !important;
+    white-space: nowrap;
+  }
+  .apple-calendar .fc-button {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.75rem !important;
+    height: auto !important;
+    line-height: 1.2 !important;
+    white-space: nowrap;
+  }
+  .apple-calendar .fc-toolbar-chunk {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+}
+
+/* Markdown Styles */
+.markdown-body {
+  color: #e2e8f0;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  color: #f8fafc;
+  font-weight: 700;
+  margin-top: 1.8em;
+  margin-bottom: 0.8em;
+  letter-spacing: -0.02em;
+}
+
+.markdown-body h1 { 
+  font-size: 1.75em; 
+}
+
+.markdown-body h2 { 
+  font-size: 1.35em; 
+  border-bottom: 1px solid #1e3a5f; 
+  padding-bottom: 0.4em; 
+}
+
+.markdown-body h3 { 
+  font-size: 1.15em; 
+}
+
+.markdown-body p {
+  margin-bottom: 1.2em;
+}
+
+.markdown-body ul, .markdown-body ol {
+  margin-bottom: 1.2em;
+  padding-left: 1.8em;
+}
+
+.markdown-body ul {
+  list-style-type: disc;
+}
+
+.markdown-body ol {
+  list-style-type: decimal;
+}
+
+.markdown-body li {
+  margin-bottom: 0.5em;
+}
+
+.markdown-body strong {
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.markdown-body code {
+  background: #051326;
+  border: 1px solid #1e3a5f;
+  color: #38bdf8;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.markdown-body blockquote {
+  border-left: 4px solid #00a859;
+  padding-left: 1.2em;
+  color: #94a3b8;
+  margin: 1.5em 0;
+  background: rgba(0, 44, 95, 0.2);
+  padding-top: 0.8em;
+  padding-bottom: 0.8em;
+  border-radius: 0 8px 8px 0;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 2em 0;
+  font-size: 0.95em;
+  border: 1px solid #1e3a5f;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.markdown-body th, .markdown-body td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #1e3a5f;
+  border-right: 1px solid #1e3a5f;
+  vertical-align: middle;
+}
+
+.markdown-body th:last-child, .markdown-body td:last-child {
+  border-right: none;
+}
+
+.markdown-body tr:last-child td {
+  border-bottom: none;
+}
+
+.markdown-body th {
+  background-color: #051326;
+  color: #38bdf8;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.markdown-body tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+html, body {
+  overscroll-behavior-y: none;
+  height: 100%;
+  overflow: hidden;
+}
