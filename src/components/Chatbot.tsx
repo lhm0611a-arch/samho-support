@@ -9,9 +9,9 @@ export const Chatbot = ({ inline }: { inline?: boolean }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [language, setLanguage] = useState<string | null>(null);
   const [category, setCategory] = useState<string | null>(null);
-  const [conciseMode, setConciseMode] = useState(true);
+  const [conciseMode, setConciseMode] = useState(false);
   const [messages, setMessages] = useState<{role: 'user' | 'model' | 'system', text: string}[]>([
-    { role: 'model', text: '안녕하세요! 상담 챗봇입니다.\n먼저 상담 언어를 선택해 주세요.\nPlease select your preferred language.' }
+    { role: 'model', text: '안녕하세요! HD현대삼호 외국인지원센터 전문 상담 챗봇입니다.\n먼저 원하시는 상담 언어를 선택해 주세요.\nPlease select your preferred language.' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -123,14 +123,16 @@ export const Chatbot = ({ inline }: { inline?: boolean }) => {
       {isOpen && (
         <div className="fixed bottom-0 right-0 w-full h-[85vh] md:h-[600px] md:bottom-6 md:right-6 md:w-96 max-h-[100vh] md:max-h-[80vh] bg-[#051326]/95 backdrop-blur-xl border border-[#1e3a5f] rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col z-[9999] overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-[#020b18]/80 border-b border-[#1e3a5f] shrink-0">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-cyan-400" />
+          <div className="flex items-center justify-between px-4 py-3 bg-[#020b18]/90 border-b border-[#1e3a5f] shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shrink-0">
+                <MessageSquare className="w-4 h-4" />
+              </div>
               <div>
-                <h3 className="font-semibold text-white text-sm">긴급 상담 AI 챗봇</h3>
-                <span className="text-[10px] text-cyan-400 font-medium flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                  유료 모델(gemini-3.1-flash-lite) 실시간 상담
+                <h3 className="font-bold text-white text-sm">외국인지원센터 전문 상담 AI</h3>
+                <span className="text-[10px] text-cyan-300 font-medium flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  실시간 최신 지식 검색 & 모국어 뉘앙스 지원
                 </span>
               </div>
             </div>
@@ -139,15 +141,15 @@ export const Chatbot = ({ inline }: { inline?: boolean }) => {
                 type="button"
                 onClick={() => setConciseMode(!conciseMode)}
                 className={clsx(
-                  "text-[10px] px-2 py-0.5 rounded-full border transition-all flex items-center gap-1",
-                  conciseMode 
-                    ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20" 
+                  "text-[10px] font-medium px-2 py-0.5 rounded-full border transition-all flex items-center gap-1",
+                  !conciseMode 
+                    ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-200 hover:bg-cyan-500/30" 
                     : "bg-white/5 border-white/10 text-gray-400 hover:text-white"
                 )}
-                title="불필요한 답변을 줄이고 핵심 조치만 간추려 답변하는 토큰 최소화 모드"
+                title={conciseMode ? "현재 요약 모드입니다. 클릭 시 상세 전문 상담 모드로 전환합니다." : "현재 상세 전문 상담 모드입니다. 클릭 시 간결 요약 모드로 전환합니다."}
               >
-                <span className={clsx("w-1.5 h-1.5 rounded-full", conciseMode ? "bg-cyan-400" : "bg-gray-500")} />
-                {conciseMode ? "핵심 요약" : "일반"}
+                <span className={clsx("w-1.5 h-1.5 rounded-full", !conciseMode ? "bg-cyan-400 shadow-[0_0_6px_#38bdf8]" : "bg-gray-500")} />
+                {!conciseMode ? "상세 상담" : "간결 요약"}
               </button>
               <button 
                 onClick={() => setIsOpen(false)}

@@ -8,6 +8,7 @@ import { useLanguageStore } from '../store/languageStore';
 import { useTranslation } from '../utils/translations';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { HDHyundaiCI } from './HDHyundaiCI';
 
 export const Login = () => {
   const language = useLanguageStore(state => state.language);
@@ -41,9 +42,13 @@ export const Login = () => {
 
     if (role === 'counselor') {
       const input = counselorInputId.trim().toLowerCase();
+      if (!input.startsWith('cs')) {
+        return alert('통역위원 계정은 ID가 반드시 "cs"로 시작해야 합니다. (예: cs01, cs1, cs_vn 등)\n"cs"로 시작하지 않는 ID는 관리자 계정입니다. 상단의 [관리자] 탭에서 로그인해주세요.');
+      }
       const matchNumeric = input.match(/^cs0*(\d+)$/);
       
       const counselor = counselors.find(c => {
+        if (!c.id.toLowerCase().startsWith('cs')) return false;
         const dbId = c.id.toLowerCase();
         if (dbId === input) return true;
         
@@ -55,7 +60,7 @@ export const Login = () => {
       });
 
       if (!counselor || counselor.isRetired) {
-        return alert('존재하지 않는 통역위원 ID입니다.');
+        return alert('존재하지 않는 통역위원 ID입니다. ID가 cs로 시작하는지 확인해주세요.');
       }
       
       const targetPassword = counselor.password || '1234';
@@ -79,6 +84,9 @@ export const Login = () => {
       login({ uid: counselor.id, name: counselor.name, country: counselor.country }, role);
     } else if (role === 'admin') {
       const input = counselorInputId.trim().toLowerCase();
+      if (input.startsWith('cs')) {
+        return alert('"cs"로 시작하는 ID는 통역위원 전용 계정입니다. 상단의 [통역위원] 탭에서 로그인해주세요.');
+      }
       
       // Fallback for default admin
       if (input === 'admin') {
@@ -92,6 +100,7 @@ export const Login = () => {
       const matchNumeric = input.match(/^admin0*(\d+)$/);
       
       let admin = counselors.find(c => {
+        if (c.id.toLowerCase().startsWith('cs')) return false; // Exclude counselors
         const dbId = c.id.toLowerCase();
         if (dbId === input) return true;
         
@@ -189,11 +198,13 @@ export const Login = () => {
   return (
     <div className="min-h-full py-8 flex items-center justify-center bg-transparent p-4 relative z-10">
       <div className="dx-card p-8 md:p-10 w-full max-w-md animate-fade-in-up">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-5">
-            <img src="/ci.png" alt="HD현대삼호" className="h-8 md:h-10 object-contain" />
+        <div className="text-center mb-7">
+          <div className="flex justify-center mb-4">
+            <HDHyundaiCI size="lg" subtitle="외국인지원센터" />
           </div>
-          <h3 className="text-[14.5px] font-bold text-[#94a3b8] tracking-widest uppercase">{role === 'worker' ? t('login.welcome') : '외국인지원센터 상담 예약 시스템'}</h3>
+          <h3 className="text-xs font-bold text-cyan-300 tracking-widest uppercase">
+            {role === 'worker' ? t('login.welcome') : '외국인지원센터 야드 통합 포털'}
+          </h3>
         </div>
         
         <div className="flex bg-[#051326] p-1 rounded-xl mb-7 border border-[#1e3a5f]">
@@ -254,9 +265,12 @@ export const Login = () => {
                   value={counselorInputId}
                   onChange={e => setCounselorInputId(e.target.value)}
                   className="dx-input"
-                  placeholder="ID 입력"
+                  placeholder="예: cs01, cs1, cs2"
                   disabled={isChangingPassword}
                 />
+                <p className="text-[11px] text-sky-400/90 mt-1.5 font-medium">
+                  ※ 통역사는 ID가 <strong>cs</strong>로 시작해야 합니다. (그 외 ID는 관리자 계정)
+                </p>
               </div>
               <div>
                 <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-2">현재 비밀번호</label>
@@ -320,9 +334,12 @@ export const Login = () => {
                   value={counselorInputId}
                   onChange={e => setCounselorInputId(e.target.value)}
                   className="dx-input"
-                  placeholder="ID 입력"
+                  placeholder="예: admin, admin1"
                   disabled={isChangingPassword}
                 />
+                <p className="text-[11px] text-purple-400/90 mt-1.5 font-medium">
+                  ※ 관리자는 <strong>cs</strong>로 시작하지 않는 관리자 ID로 접속합니다.
+                </p>
               </div>
               <div>
                 <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-2">현재 비밀번호</label>

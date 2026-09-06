@@ -13,6 +13,8 @@ import { FileText, LayoutDashboard, Calendar, BarChart3, Settings, LogOut, Messa
 import clsx from 'clsx';
 import { useTicketStore } from './store/ticketStore';
 import { useFirestore } from './hooks/useFirestore';
+import { BackgroundCarousel } from './components/BackgroundCarousel';
+import { HDHyundaiCI } from './components/HDHyundaiCI';
 
 export default function App() {
   const { user, role, logout, company_code } = useAuthStore();
@@ -40,8 +42,9 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="fixed top-0 left-0 w-full h-[100dvh] yard-bg text-[#e2e8f0] flex flex-col font-sans overflow-hidden overscroll-none touch-none">
-        <div className="flex-1 w-full h-full overflow-y-auto overscroll-none touch-auto">
+      <div className="fixed top-0 left-0 w-full h-[100dvh] text-[#e2e8f0] flex flex-col font-sans overflow-hidden overscroll-none touch-none relative">
+        <BackgroundCarousel />
+        <div className="flex-1 w-full h-full overflow-y-auto overscroll-none touch-auto relative z-10">
           <Login />
         </div>
       </div>
@@ -50,7 +53,8 @@ export default function App() {
 
   if (role === 'admin' || role === 'sub-admin' || role === 'counselor') {
     return (
-      <div className="h-[100dvh] w-full flex overflow-hidden yard-bg font-sans text-[#e2e8f0]">
+      <div className="h-[100dvh] w-full flex overflow-hidden font-sans text-[#e2e8f0] relative">
+        <BackgroundCarousel />
         {/* Sidebar Overlay */}
         {isSidebarOpen && (
           <div 
@@ -64,12 +68,13 @@ export default function App() {
           "fixed inset-y-0 left-0 z-30 w-64 bg-[#08172c]/95 backdrop-blur-xl border-r border-[#1e3a5f] text-gray-300 flex flex-col shrink-0 transition-transform duration-300 ease-in-out shadow-2xl",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}>
-          <div className="h-20 flex items-center justify-between pl-[10px] pr-[15px] border-b border-[#1e3a5f] bg-[#051326]/50">
-            <div className="flex items-center gap-3 w-[161.234px] h-[41.5px]">
-              <img src="/ci.png" alt="HD현대삼호" className="h-[19.5px] w-[87.4688px] object-contain" />
-              <span className="text-[#f8fafc] tracking-wide leading-tight text-center font-bold text-[12.75px] mt-[5px] h-[34.9688px] w-[53.6406px]">외국인<br />지원센터</span>
-            </div>
-            <button className="text-gray-400 hover:text-white transition-colors" onClick={() => setIsSidebarOpen(false)}>
+          <div className="h-20 flex items-center justify-between px-4 border-b border-[#1e3a5f] bg-[#051326]/75">
+            <HDHyundaiCI size="md" subtitle="외국인지원센터" />
+            <button 
+              className="text-gray-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/10" 
+              onClick={() => setIsSidebarOpen(false)}
+              aria-label="사이드바 닫기"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -143,23 +148,64 @@ export default function App() {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 relative z-10">
           {/* Header */}
-          <header className="h-20 bg-[#002c5f]/40 backdrop-blur-xl border-b border-[#1e3a5f] flex items-center justify-between px-6 md:px-10 shrink-0">
-            <div className="flex items-center gap-4 text-white">
-              <button className="p-2 hover:bg-white/10 rounded-xl transition-colors -ml-2" onClick={() => setIsSidebarOpen(true)}>
+          <header className="h-20 bg-[#002c5f]/40 backdrop-blur-xl border-b border-[#1e3a5f] flex items-center justify-between px-4 sm:px-6 md:px-10 shrink-0">
+            <div className="flex items-center gap-3 sm:gap-4 text-white min-w-0">
+              <button className="p-2 hover:bg-white/10 rounded-xl transition-colors -ml-1 sm:-ml-2 shrink-0" onClick={() => setIsSidebarOpen(true)}>
                 <Menu className="w-5 h-5 text-gray-300 hover:text-white" />
               </button>
-              <div className="hidden md:flex w-9 h-9 rounded-full bg-[#002c5f] items-center justify-center border border-[#1e3a5f] shadow-[0_0_10px_rgba(0,44,95,0.4)]">
-                <span className="text-xs font-bold text-[#38bdf8]">
-                  {role === 'counselor' ? 'CS' : 'AD'}
-                </span>
+              
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="hidden sm:flex w-9 h-9 rounded-xl bg-gradient-to-br from-[#003770] to-[#00a859] items-center justify-center border border-cyan-400/30 shadow-[0_0_15px_rgba(0,168,89,0.3)] shrink-0">
+                  <span className="text-xs font-black text-white tracking-wider">
+                    {role === 'counselor' ? 'CS' : role === 'sub-admin' ? 'CO' : 'HQ'}
+                  </span>
+                </div>
+
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm sm:text-base md:text-lg font-bold tracking-tight text-[#f8fafc] truncate">
+                      {user?.name || (role === 'counselor' ? '통역위원' : '관리자')}
+                    </span>
+                    
+                    {/* Role Mode Badge */}
+                    <span className={clsx(
+                      "px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-bold border tracking-tight shrink-0 flex items-center gap-1",
+                      role === 'counselor' 
+                        ? "bg-emerald-950/60 text-emerald-300 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
+                        : role === 'sub-admin'
+                        ? "bg-amber-950/60 text-amber-300 border-amber-500/40"
+                        : "bg-cyan-950/60 text-cyan-300 border-cyan-500/40 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                    )}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
+                      <span>
+                        {role === 'counselor' 
+                          ? `통역위원 모드${user?.country ? ` (${user.country})` : ''}` 
+                          : role === 'sub-admin'
+                          ? `협력사 관리자 (${company_code || '-'})`
+                          : '통합 관리자 모드'}
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="hidden md:flex items-center gap-1.5 text-[11px] text-slate-300 font-medium tracking-wide">
+                    <span className="w-2 h-2 rounded-sm bg-[#00A859] inline-block shadow-sm"></span>
+                    <strong className="text-white font-bold">HD현대삼호</strong> 외국인지원센터 · Yard DX Telemetry System
+                  </div>
+                </div>
               </div>
-              <span className="text-base sm:text-lg font-bold tracking-wide text-[#f8fafc] uppercase truncate max-w-[150px] sm:max-w-none">
-                Welcome, {user?.name || (role === 'counselor' ? '통역위원' : 'Admin')}
-              </span>
             </div>
-            <div className="flex items-center gap-3 md:gap-6 text-gray-400">
-              {/* Header utilities */}
+
+            <div className="flex items-center gap-2 sm:gap-4 text-gray-400 shrink-0">
               <PushNotificationManager />
+              
+              <button 
+                onClick={logout} 
+                className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white transition-all bg-[#04162e]/80 hover:bg-red-950/40 border border-[#1e3a5f] hover:border-red-500/40 px-3 py-1.5 rounded-lg font-semibold shadow-sm"
+                title="로그아웃"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">로그아웃</span>
+              </button>
             </div>
           </header>
 
@@ -179,7 +225,8 @@ export default function App() {
   }
 
   return (
-    <div className="fixed top-0 left-0 w-full h-[100dvh] yard-bg text-[#e2e8f0] flex flex-col font-sans overflow-hidden overscroll-none touch-none">
+    <div className="fixed top-0 left-0 w-full h-[100dvh] text-[#e2e8f0] flex flex-col font-sans overflow-hidden overscroll-none touch-none relative">
+      <BackgroundCarousel />
       <header className="absolute top-0 right-0 p-4 md:p-8 z-20 flex items-center gap-2 pointer-events-none w-full justify-end">
         <div className="pointer-events-auto mr-auto">
           <PushNotificationManager />

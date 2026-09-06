@@ -3,9 +3,11 @@ import { useCounselorStore, CounselorUser } from '../store/counselorStore';
 import { useFirestore } from '../hooks/useFirestore';
 import { useAuthStore } from '../store/authStore';
 import { COUNTRIES } from '../constants';
-import { Plus, Edit2, Trash2, Key, X, Check, Mail, Send, Bell, Image as ImageIcon, Upload, Cpu } from 'lucide-react';
+import { Plus, Edit2, Trash2, Key, X, Check, Mail, Send, Bell, Image as ImageIcon, Upload, Cpu, Shield, UserCheck } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { BackgroundSlideManager } from '../components/BackgroundSlideManager';
+import { isCounselorId } from '../utils/counselorHelper';
 
 export const Settings = () => {
   const { counselors } = useCounselorStore();
@@ -26,10 +28,6 @@ export const Settings = () => {
   const [newEmail, setNewEmail] = useState('');
   const [isSavingEmail, setIsSavingEmail] = useState(false);
   const [isTestingEmail, setIsTestingEmail] = useState(false);
-
-  const [isUploadingYard, setIsUploadingYard] = useState(false);
-  const [yardTimestamp, setYardTimestamp] = useState(Date.now());
-  const [uploadMessage, setUploadMessage] = useState('');
 
   const [telegramBotToken, setTelegramBotToken] = useState('');
   
@@ -277,10 +275,10 @@ export const Settings = () => {
     if (isAdding || newlyAddedId) return;
     setIsAdding(true);
     try {
-      // Calculate new ID: CS01, CS02...
+      // Calculate new ID: cs01, cs02... (Rule: Counselors strictly start with 'cs')
       let maxNum = 0;
       counselors.forEach(c => {
-        if (c.id.toUpperCase().startsWith('CS')) {
+        if (c.id.toLowerCase().startsWith('cs')) {
           const num = parseInt(c.id.substring(2), 10);
           if (!isNaN(num) && num > maxNum) {
             maxNum = num;
@@ -288,7 +286,7 @@ export const Settings = () => {
         }
       });
       const nextNum = maxNum + 1;
-      const newId = `CS${nextNum.toString().padStart(2, '0')}`;
+      const newId = `cs${nextNum.toString().padStart(2, '0')}`;
       
       const newCounselor = {
         id: newId,
@@ -316,7 +314,7 @@ export const Settings = () => {
       let maxNum = 0;
       counselors.forEach(c => {
         if (c.id.toLowerCase().startsWith('admin')) {
-          const num = parseInt(c.id.substring(2), 10);
+          const num = parseInt(c.id.substring(5), 10);
           if (!isNaN(num) && num > maxNum) {
             maxNum = num;
           }
@@ -328,7 +326,7 @@ export const Settings = () => {
       const newCounselor = {
         id: newId,
         name: '새 관리자',
-        country: COUNTRIES[0],
+        country: '한국',
         languages: ['한국어'],
         password: '1234',
         isRetired: false
@@ -511,6 +509,7 @@ export const Settings = () => {
             <thead>
               <tr className="bg-white/5 border-b border-white/10 text-xs text-gray-400">
                 <th className="py-3 px-4 font-medium whitespace-nowrap">ID</th>
+                <th className="py-3 px-4 font-medium whitespace-nowrap">계정 구분</th>
                 <th className="py-3 px-4 font-medium whitespace-nowrap">이름</th>
                 <th className="py-3 px-4 font-medium whitespace-nowrap">상태</th>
                 <th className="py-3 px-4 font-medium whitespace-nowrap">국가</th>
@@ -524,19 +523,31 @@ export const Settings = () => {
                 if (a.id === newlyAddedId) return -1;
                 if (b.id === newlyAddedId) return 1;
 
-                const aIsMg = a.id.toLowerCase().startsWith('admin');
-                const bIsMg = b.id.toLowerCase().startsWith('admin');
+                const aIsCs = isCounselorId(a.id);
+                const bIsCs = isCounselorId(b.id);
                 
-                if (aIsMg && !bIsMg) return -1;
-                if (!aIsMg && bIsMg) return 1;
+                // Counselors first, then admins
+                if (aIsCs && !bIsCs) return -1;
+                if (!aIsCs && bIsCs) return 1;
 
                 const aNum = parseInt(a.id.replace(/[^0-9]/g, '')) || 0;
                 const bNum = parseInt(b.id.replace(/[^0-9]/g, '')) || 0;
                 return aNum - bNum;
               }).map(c => (
                 <tr key={c.id} className={`hover:bg-white/5 transition-colors ${c.isRetired ? 'bg-red-500/5' : ''}`}>
-                  <td className={`py-3 px-4 text-gray-300 whitespace-nowrap ${c.isRetired ? 'opacity-50 line-through' : ''}`}>
+                  <td className={`py-3 px-4 text-gray-300 whitespace-nowrap font-mono font-medium ${c.isRetired ? 'opacity-50 line-through' : ''}`}>
                     {c.id.toUpperCase()}
+                  </td>
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    {isCounselorId(c.id) ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                        <UserCheck className="w-3 h-3" /> 통역위원 (cs)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                        <Shield className="w-3 h-3" /> 관리자
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 px-4 text-gray-300 whitespace-nowrap">
                     {editingId === c.id ? (
@@ -766,91 +777,8 @@ export const Settings = () => {
         </div>
       </div>
 
-      {/* 조선소 야드 배경화면 설정 카드 */}
-      <div className="dx-card p-6 flex flex-col gap-4">
-        <div className="flex items-center justify-between border-b border-[#1e3a5f] pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
-              <ImageIcon className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                조선소 야드 배경화면 (Shipyard Yard Background)
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/30 font-normal">
-                  적용 중
-                </span>
-              </h3>
-              <p className="text-xs text-gray-400 mt-0.5">
-                대시보드 및 전체 화면 배경에 HD현대삼호 조선소 야드 전경이 감성적인 톤으로 적용됩니다.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row items-center gap-6">
-          <div className="relative w-full md:w-64 h-36 rounded-xl overflow-hidden border border-[#1e3a5f] shadow-lg shrink-0 group">
-            <img 
-              src={`/yard.png?t=${yardTimestamp}`} 
-              alt="조선소 야드 배경" 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2.5">
-              <span className="text-[11px] text-white font-medium">현재 적용된 야드 배경</span>
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col gap-2 w-full">
-            <p className="text-xs text-gray-300 leading-relaxed">
-              조선소 야드 항공 사진이나 고화질 현장 이미지를 교체하려면 아래 버튼을 클릭하여 새 이미지 파일(PNG, JPG)을 업로드하세요. 업로드 즉시 전체 화면에 자동 적용됩니다.
-            </p>
-            {uploadMessage && (
-              <p className="text-xs font-semibold text-green-400 animate-fade-in flex items-center gap-1.5">
-                <Check className="w-4 h-4" /> {uploadMessage}
-              </p>
-            )}
-            <div className="pt-2">
-              <label className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
-                isUploadingYard 
-                  ? 'bg-gray-800 text-gray-400 border-gray-700 cursor-not-allowed' 
-                  : 'bg-[#002c5f] hover:bg-[#003770] text-white border-[#1e3a5f] hover:border-blue-400 shadow-md'
-              }`}>
-                <Upload className="w-4 h-4 text-cyan-400" />
-                {isUploadingYard ? '야드 이미지 업로드 중...' : '새 야드 이미지 파일 선택 및 변경'}
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    setIsUploadingYard(true);
-                    setUploadMessage('');
-                    try {
-                      const formData = new FormData();
-                      formData.append('yard', file);
-                      const res = await fetch('/api/upload-yard-bg', {
-                        method: 'POST',
-                        body: formData,
-                      });
-                      if (!res.ok) throw new Error('업로드에 실패했습니다.');
-                      setYardTimestamp(Date.now());
-                      setUploadMessage('새로운 야드 이미지가 성공적으로 저장 및 적용되었습니다!');
-                      setTimeout(() => setUploadMessage(''), 5000);
-                    } catch (err: any) {
-                      alert(`업로드 실패: ${err.message}`);
-                    } finally {
-                      setIsUploadingYard(false);
-                      e.target.value = '';
-                    }
-                  }} 
-                  disabled={isUploadingYard} 
-                  className="hidden" 
-                />
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* 조선소 야드 및 통역위원 사진 슬라이드쇼 관리 컴포넌트 */}
+      <BackgroundSlideManager />
 
       {confirmDialog.isOpen && (
 

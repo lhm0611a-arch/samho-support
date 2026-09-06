@@ -65,7 +65,7 @@ async function generateReportWithAI(ai: GoogleGenAI, prompt: string, schema?: an
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         config: { 
           responseMimeType: 'application/json',
-          maxOutputTokens: 1200,
+          maxOutputTokens: 4000,
           ...(schema ? { responseSchema: schema } : {})
         }
       });
@@ -81,23 +81,46 @@ async function generateReportWithAI(ai: GoogleGenAI, prompt: string, schema?: an
   throw lastErr;
 }
 
-// Helper to execute conversational chatbot using token-minimizing ultra-lightweight paid model
-async function generateChatWithAI(ai: GoogleGenAI, contents: any[], systemInstruction: string, maxTokens: number = 400): Promise<string> {
-  // 1순위: gemini-3.1-flash-lite (100만 토큰당 $0.075 초저비용, 최고속도 다국어 응답)
-  // 2순위: gemini-3.8-flash (일시적 지연 시 자동 폴백)
-  // 3순위: gemini-3.1-pro-preview (심층 추론 폴백)
-  const models = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-3.1-pro-preview'];
+// Helper to execute conversational chatbot with empathetic, rich, and up-to-date responses
+async function generateChatWithAI(ai: GoogleGenAI, contents: any[], systemInstruction: string, maxTokens: number = 1500): Promise<string> {
+  // Model priority:
+  // 1. gemini-3.8-flash (Standard model supporting search grounding and rich natural multilingual responses)
+  // 2. gemini-3.1-pro-preview (Deep reasoning fallback)
+  // 3. gemini-3.1-flash-lite (Ultra-fast fallback)
+  const models = ['gemini-3.8-flash', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite'];
   let lastErr: any;
+
   for (const model of models) {
     try {
-      console.log(`[Chatbot] Generating reply with token-optimized model: ${model} (maxTokens: ${maxTokens})...`);
+      console.log(`[Chatbot] Generating empathetic expert reply with model: ${model} (maxTokens: ${maxTokens})...`);
+      
+      // Try with Google Search Grounding for up-to-date knowledge
+      try {
+        const responseWithSearch = await ai.models.generateContent({
+          model,
+          contents,
+          config: {
+            systemInstruction,
+            maxOutputTokens: maxTokens,
+            temperature: 0.35, // Natural, warm, empathetic tone
+            tools: [{ googleSearch: {} }]
+          }
+        });
+        if (responseWithSearch && responseWithSearch.text) {
+          return responseWithSearch.text;
+        }
+      } catch (searchErr: any) {
+        console.warn(`[Chatbot] Search grounding not supported on ${model} or failed, trying standard call:`, searchErr?.message || searchErr);
+      }
+
+      // Fallback without search tool
       const response = await ai.models.generateContent({
         model,
         contents,
         config: {
           systemInstruction,
           maxOutputTokens: maxTokens,
-          temperature: 0.2, // Low temperature for high-density, accurate, non-rambling responses
+          temperature: 0.35
         }
       });
       if (response && response.text) {
@@ -114,29 +137,44 @@ async function generateChatWithAI(ai: GoogleGenAI, contents: any[], systemInstru
   throw lastErr;
 }
 
-// Compact statistics payload to drastically minimize input tokens (by up to 85%)
+// Format comprehensive statistics and case details for executive-level AI report generation
 function compactStatsForAI(stats: any): string {
   if (!stats) return "통계 데이터 없음";
-  const compact: any = {
-    총상담: stats.total || 0,
-    완료건: stats.completed || 0,
-    완료율: `${stats.completionRate || 0}%`,
-    RedFlag_위험군: stats.redFlags || 0
-  };
+  const lines: string[] = [];
+  lines.push(`- 총 접수 건수: ${stats.total || 0}건`);
+  lines.push(`- 처리 완료 건수: ${stats.completed || 0}건 (처리 완료율: ${stats.completionRate || 0}%)`);
+  lines.push(`- Red Flag(긴급/고위험/중재필요) 건수: ${stats.redFlags || 0}건`);
+
   if (Array.isArray(stats.byCategory) && stats.byCategory.length > 0) {
-    compact.유형별 = stats.byCategory.map((c: any) => `${c.name || c.category}:${c.value || c.count}건`).join(', ');
+    lines.push(`- 분야별(카테고리) 상담 분포: ${stats.byCategory.map((c: any) => `${c.name || c.category}: ${c.value || c.count}건`).join(', ')}`);
   }
   if (Array.isArray(stats.byCountry) && stats.byCountry.length > 0) {
-    compact.국적별 = stats.byCountry.map((c: any) => `${c.country || c.name}:${c.count || c.value}건`).join(', ');
+    lines.push(`- 국적별 근로자 상담 분포: ${stats.byCountry.map((c: any) => `${c.country || c.name}: ${c.count || c.value}건`).join(', ')}`);
   }
   if (Array.isArray(stats.byInterpreters) && stats.byInterpreters.length > 0) {
-    compact.통역사별 = stats.byInterpreters.map((i: any) => `${i.name}:${i.count}건`).join(', ');
+    lines.push(`- 통역위원별 배정 및 처리 실적: ${stats.byInterpreters.map((i: any) => `${i.name}: ${i.count}건`).join(', ')}`);
   }
+
+  // Include detailed actual cases
+  if (Array.isArray(stats.counselingDetails) && stats.counselingDetails.length > 0) {
+    lines.push(`\n[실제 완료된 주요 상담 및 조치 세부 내역 (총 ${stats.counselingDetails.length}건 중 주요 사례)]:`);
+    stats.counselingDetails.slice(0, 30).forEach((t: any, idx: number) => {
+      lines.push(`${idx + 1}. [소속협력사: ${t.업체명 || '협력사'}] [근로자: ${t.이름 || '익명'}] [분야: ${t.카테고리}] [긴급여부: ${t.긴급여부}]`);
+      if (t.상담내용_및_결과) {
+        lines.push(`   * 상담 요지 및 조치 결과: ${String(t.상담내용_및_결과).slice(0, 300)}`);
+      }
+    });
+  }
+
+  // Include other tasks (translations, safety trainings, field support)
   if (Array.isArray(stats.otherTasks) && stats.otherTasks.length > 0) {
-    compact.기타업무실적_총건수 = stats.otherTasks.length;
-    compact.주요기타업무 = stats.otherTasks.slice(0, 5).map((t: any) => `[${t.통역사 || ''}] ${t.업무구분 || ''} ${t.소속 || ''}`).join('; ');
+    lines.push(`\n[통역위원 현장 지원 및 기타 대외 업무 실적 (총 ${stats.otherTasks.length}건)]:`);
+    stats.otherTasks.slice(0, 25).forEach((o: any, idx: number) => {
+      lines.push(`${idx + 1}. [담당통역위원: ${o.통역사 || '통역위원'}] [업무구분: ${o.업무유형 || o.업무구분 || '현장지원'}] [제목: ${o.업무제목 || ''}] 실적내용: ${String(o.업무실적 || '').slice(0, 250)}`);
+    });
   }
-  return JSON.stringify(compact);
+
+  return lines.join('\n');
 }
 
 function extractJson(text: string): any {
@@ -596,32 +634,47 @@ async function generateDailyInsights(reportType: 'daily' | 'weekly' | 'monthly' 
       });
       return;
     }
-    const prompt = `너는 HD현대삼호 외국인지원센터의 상담 실적 보고 담당자다.
-다음은 ${stats.기간} 동안 "실제 처리 완료된" 외국인 근로자 상담 세부 내용과 통계 데이터다.
+    const prompt = `당신은 HD현대삼호 외국인지원센터의 총괄 데이터 분석관이자 행정 보고관입니다.
+센터장 및 유관 부서장들에게 정기 보고되는 '${reportTitleStr} (외국인 상담 실적 및 운영 종합 분석)'를 전문적인 마크다운 형식으로 심도 있게 작성하십시오.
 
-[상담 데이터 및 통계]
+[현장 집계 데이터 및 상담 세부 내역]
 ${JSON.stringify(stats, null, 2)}
 
-위 데이터를 기반으로 있는 그대로의 실적을 투명하게 보고하는 ${reportTitleStr}를 마크다운으로 작성하라.
+[보고서 작성 필수 원칙 및 구성 체계]
+1. 문서 타이틀 및 메타 정보:
+   # 📊 HD현대삼호 외국인지원센터 ${reportTitleStr}
+   > **작성 기준**: ${stats.기간} 처리 완료 실적 및 현장 통역 지원 데이터
+   > **보고 대상**: HD현대삼호 외국인지원센터 및 사내 협력사 동반성장협의회
 
-[작성 지침]
-1. 어조 및 문체: 과도한 강조어, 형용사, 부사(예: 매우, 심각한, 혁신적인 등)를 철저히 배제하고, 오직 팩트(사실) 위주의 담백하고 건조한 객관적인 문체를 사용할 것. 모든 문장은 명사형 종결이나 간결한 개조식(bullet points)으로 작성할 것.
-2. 구성 (필수 포함):
-    - **[현황 요약]**: 전체 상담 처리 현황 및 기타 업무 실적(번역, 교육지원 등) 주요 특이사항을 명확하게 요약.
-    - **[핵심 지표]**: 접수 건수, 완료 건수, 기타 업무 건수, 긴급 사례 건수 등 핵심 숫자를 깔끔한 마크다운 표(|---|) 형식으로 작성하여 한눈에 파악할 수 있도록 구성할 것.
-    - **[주요 국적 및 유형]**: 주요 국적별, 상담 유형별 분포 현황을 마크다운 표나 간결한 개조식으로 요약.
-    - **[상담 및 주요 업무 실적]**: 완료된 상담 및 기타 등록된 업무 실적(otherTasks 활용)의 주요 내용을 요약. 어떤 통역사가 어떤 업무 실적을 냈는지 분명히 보고. 주요 카테고리별로 묶어서 간결하게 나열할 것.
-3. 데이터 제약: 과도한 추론은 배제하고, 철저하게 실적(Fact) 기반으로만 서술할 것.
-4. 형식: 제목, 부제목(##, ###), 굵은 글씨(**), 마크다운 표(|---|) 등을 적절히 활용하여 시각적으로 깔끔하고 정돈되게 구성할 것.
+2. 1. 📌 총괄 운영 요약 (Executive Summary):
+   - 전체 상담 인입 및 처리 완료 현황, 통역위원 현장 지원 가동률 총괄 서술 (2~3개 문단)
+
+3. 2. 📈 핵심 운영 성과 지표 (KPI Dashboard):
+   - 마크다운 표(| 지표명 | 접수 건수 | 완료 건수 | 완료율(%) | Red Flag(고위험) | 기타 대외업무 |)로 작성
+
+4. 3. 🌐 국적별 및 언어권별 현장 분석:
+   - 주요 국적별 상담 비중과 언어권별 주요 이슈 심층 분석
+
+5. 4. 📂 주요 분야별 상담 현황 및 대표 조치 사례 (Case Highlights):
+   - 비자/체류, 노무/임금, 주거/생활, 안전/보건 등 분야별 실제 조치 완료 사례 구체적 서술
+
+6. 5. 🤝 통역위원 현장 지원 및 기타 대외 업무 성과 (otherTasks):
+   - 현장 안전교육, 병원 동행, 관공서 서류 번역 등 통역위원들의 현장 밀착 지원 성과
+
+7. 6. 🚨 고위험군(Red Flag) 사례 관리 및 노사/안전 리스크 예방 조치:
+   - 특이사항 및 사전 예방 조치 내역
+
+8. 7. 💡 종합 평가 및 차기 중점 추진 과제:
+   - 3~4가지 차기 추진 실행과제를 구체적으로 번호 매겨 제언
 
 결과는 다음 JSON 형식으로 반환할 것:
-1. "insights": 핵심 성과 요약 3줄 (텍스트만).
-2. "report": 위 요구사항을 완벽히 반영한 마크다운 리포트 전문.
-
-반드시 아래 JSON 스키마로만 결과를 반환해라. 마크다운(\`\`\`json) 제외.
 {
-  "insights": ["...", "...", "..."],
-  "report": "# 외국인 지원센터 상담 실적 ${reportTitleStr}\\n\\n..."
+  "insights": [
+    "핵심 성과 요약 1",
+    "핵심 성과 요약 2",
+    "핵심 성과 요약 3"
+  ],
+  "report": "# 📊 HD현대삼호 외국인지원센터 ${reportTitleStr}\\n\\n..."
 }`;
 
     let response;
@@ -1232,19 +1285,52 @@ app.post('/api/generate-insights', async (req, res) => {
     const periodName = period === 'day' ? '일일' : period === 'week' ? '주간' : period === 'month' ? '월간' : '전체';
     const compactedData = compactStatsForAI(stats);
     
-    const prompt = `너는 HD현대삼호 외국인지원센터의 데이터 분석가다.
-다음은 ${periodName} 기간 내 실제 집계된 핵심 통계 데이터다:
+    const prompt = `당신은 HD현대삼호 외국인지원센터의 총괄 수석 데이터 분석관이자 행정 보고관입니다.
+센터장, 사내 임원진 및 협력사 대표단에게 공식 제출되는 품격 있고 심층적인 '${periodName} 종합 상담 실적 및 운영 분석 보고서'를 전문적인 비즈니스 마크다운 형식으로 작성하십시오.
+
+[현장 집계 데이터 및 상담 실적 세부 내역]
 ${compactedData}
 
-[지침]
-1. 비용 및 토큰 최소화를 위해 서론·미사여구를 철저히 생략하고 명사형/개조식으로 작성하라.
-2. 구성:
-- [핵심 요약]: 총 접수, 완료율, Red Flag 현황
-- [심층 분석]: 주요 국가별/유형별 분석 표(|---|)
-- [리스크 대응]: 고위험 및 특이사항 대응
-- [제언]: 차기 중점 추진과제
-3. JSON 형식으로만 반환:
-{"insights": ["3줄 요약 1", "3줄 요약 2", "3줄 요약 3"], "report": "# HD현대삼호 외국인 지원센터 ${periodName} 실적 보고서\\n\\n..."}`;
+[보고서 작성 필수 원칙 및 구성 체계]
+단순한 2~3줄 메모나 부실한 요약이 아닌, 실제 현장 데이터와 조치 내용을 구체적으로 녹여낸 신뢰도 높은 정통 경영 보고서 양식을 완벽히 갖추십시오:
+
+1. 문서 타이틀 및 메타 정보:
+   # 📊 HD현대삼호 외국인지원센터 ${periodName} 종합 상담 실적 보고서
+   > **수신/보고**: HD현대삼호 외국인지원센터 총괄 및 사내 협력사 동반성장협의회
+   > **분석 기준**: ${periodName} 누적 운영 실적 및 현장 통역 지원 데이터
+
+2. 1. 📌 총괄 운영 요약 (Executive Summary):
+   - 해당 기간 동안의 전반적인 외국인 근로자 상담 인입 추이 및 센터 지원 가동 현황
+   - 주요 성과 지표(완료율, 긴급 건 중재 성과 등)에 대한 총괄 평가 2~3개 심층 문단 서술
+
+3. 2. 📈 핵심 운영 성과 지표 (KPI Dashboard):
+   - 마크다운 테이블(| 지표명 | 접수 건수 | 완료 건수 | 완료율(%) | Red Flag(고위험) | 기타 현장지원 |)을 구성하여 핵심 숫자를 일목요연하게 정리
+
+4. 3. 🌐 국적 및 언어권별 심층 분석:
+   - 주요 국적별(베트남, 우즈베키스탄, 태국, 네팔, 스리랑카, 인도네시아 등) 상담 비중 및 국가별 특이 현안(비자 연장, 문화적 적응, 의사소통 애로 등) 심층 분석
+
+5. 4. 📂 주요 분야별 상담 현황 및 대표 조치 사례 (Case Highlights):
+   - 비자/체류, 노무/임금, 기숙사/생활복지, 안전/보건 등 카테고리별 세부 현황
+   - 실제 접수되어 해결된 상담 케이스(근로자 소속 협력사, 상담 요지, 통역위원의 구체적 중재 및 조치 결과)를 구체적으로 인용하여 보고서의 실효성을 높일 것
+
+6. 5. 🤝 통역위원 현장 지원 및 기타 대외 업무 성과:
+   - 상담실 내방 업무 외에 통역위원들이 수행한 현장 지원(안전교육 통역, 병원 동행, 관공서 서류 번역, 협력사 현장 간담회 등)의 구체적 실적 및 기여도 서술
+
+7. 6. 🚨 고위험군(Red Flag) 사례 관리 및 노사/안전 리스크 예방 조치:
+   - 임금 갈등, 무단이탈 우려, 폭언/갈등, 안전 위험 등 잠재 리스크 요인에 대한 센터 차원의 선제적 조치 및 사후 모니터링 체계 점검
+
+8. 7. 💡 종합 평가 및 차기 중점 추진 과제 (Strategic Next Steps):
+   - 센터 운영 효율화, 국가별 맞춤형 케어 확대, 사내 협력사 간 협업 체계 강화 등 3~4가지 실행 과제를 구체적으로 번호 매겨 제언
+
+반드시 아래 순수 JSON 형식으로만 반환:
+{
+  "insights": [
+    "경영진 보고용 핵심 성과 및 동향 1",
+    "경영진 보고용 핵심 성과 및 동향 2",
+    "경영진 보고용 핵심 성과 및 동향 3"
+  ],
+  "report": "# 📊 HD현대삼호 외국인지원센터 ${periodName} 종합 상담 실적 보고서\\n\\n..."
+}`;
 
     let response;
     try {
@@ -1317,6 +1403,76 @@ app.post('/api/upload-yard-bg', upload.single('yard'), (req: any, res) => {
     res.json({ success: true, url: '/yard.png' });
   } catch (err: any) {
     console.error('Failed to save yard background:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Upload new background slide (yard photo, counselor photos, team pictures)
+app.post('/api/upload-bg-slide', upload.single('image'), (req: any, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file uploaded' });
+    }
+    const publicSlidesDir = path.join(process.cwd(), 'public', 'slides');
+    if (!fs.existsSync(publicSlidesDir)) {
+      fs.mkdirSync(publicSlidesDir, { recursive: true });
+    }
+    const ext = path.extname(req.file.originalname) || '.png';
+    const originalBase = path.basename(req.file.originalname, ext).replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
+    const filename = `slide_${Date.now()}_${originalBase}${ext}`;
+    const filePath = path.join(publicSlidesDir, filename);
+    fs.writeFileSync(filePath, req.file.buffer);
+    const url = `/slides/${filename}`;
+    console.log(`Saved background slide: ${url}`);
+    res.json({ 
+      success: true, 
+      url, 
+      name: req.file.originalname, 
+      filename,
+      id: filename
+    });
+  } catch (err: any) {
+    console.error('Failed to save background slide:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// List existing uploaded background slides
+app.get('/api/bg-slides', (req, res) => {
+  try {
+    const publicSlidesDir = path.join(process.cwd(), 'public', 'slides');
+    if (!fs.existsSync(publicSlidesDir)) {
+      return res.json({ slides: [] });
+    }
+    const files = fs.readdirSync(publicSlidesDir);
+    const slides = files
+      .filter(f => /\.(png|jpe?g|webp|gif|svg)$/i.test(f))
+      .map(f => {
+        const cleanName = f.replace(/^slide_\d+_/, '').replace(/\.[^/.]+$/, '');
+        return {
+          id: f,
+          name: cleanName || f,
+          url: `/slides/${f}`,
+          filename: f
+        };
+      });
+    res.json({ slides });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a background slide
+app.delete('/api/bg-slides/:filename', (req, res) => {
+  try {
+    const filename = path.basename(req.params.filename);
+    const filePath = path.join(process.cwd(), 'public', 'slides', filename);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`Deleted background slide: ${filename}`);
+    }
+    res.json({ success: true });
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -1538,22 +1694,36 @@ app.post('/api/chat', async (req, res) => {
       referenceText = referenceText.slice(0, 2000) + '\n...(참고 자료 일부 압축)';
     }
 
-    const conciseMode = req.body.conciseMode !== false;
-    const maxTokens = conciseMode ? 380 : 600;
+    const conciseMode = req.body.conciseMode === true;
+    const maxTokens = conciseMode ? 800 : 1800;
 
-    const systemInstruction = `너는 HD현대삼호 조선소 외국인지원센터의 긴급 상담 챗봇이다.
+    const systemInstruction = `너는 HD현대삼호 조선소 외국인지원센터의 전문 공감 상담사이다.
 상담 분야: [${category || '일반'}]
-응답 언어: [${language || '한국어'}] (반드시 이 언어로만 작성하라. 질문에 한국어가 포함되었더라도 응답은 100% [${language || '한국어'}]로만 작성하라.)
+응답 언어: [${language || '한국어'}]
 
-[🚨 토큰 최소화 및 핵심 요약 원칙 (STRICT TOKEN & FLUFF CONTROL)]
-1. 불필요한 단어 및 형식적 인사말은 완전 배제하라:
-   - "안녕하세요", "문의해주셔서 감사합니다", "도움이 되셨기를 바랍니다", "언제든 물어보세요" 등의 잡담 및 의례적 인사는 1단어도 포함하지 마라. 즉시 본론으로 진입하라.
-2. 무리하게 긴 설명 대신, 현장에서 즉시 확인 가능한 핵심만 3단계로 간추려 작성하라:
-   • [핵심 결론]: 상황에 대한 직관적인 직접 답변 (1문장)
-   • [행동 요령]: 지금 바로 취해야 할 구체적 조치 2~3단계 (간결한 번호/불릿)
-   • [연락 창구]: 1차 소속 담당자(협력사 대표/총무/소장, 직영 팀장) 또는 외국인지원센터 통역창구(내선 2200)
-3. 전체 분량은 120단어 이내(3~5문장 내외)로 압축하여 불필요한 토큰 소모를 원천 차단하라.
-${referenceText ? `\n[사내 규정 및 참고 자료 (핵심만 참조)]\n${referenceText}` : ''}`;
+[🚨 핵심 상담 지침 및 태도 원칙]
+1. 정성스럽고 따뜻한 전문 상담 (절대 성의 없는 3줄 단답식 요약 금지):
+   - 기계적인 로봇 답변이나 단순 3줄 요약(• [핵심 결론] 등)을 절대 강제하지 마라.
+   - 외국인 근로자나 직원이 겪는 불안과 어려움에 깊이 공감하며, 실제 사람이 직접 마주 앉아 친절하고 성심성의껏 상담해 주듯이 정중하고 따뜻하게 답변하라.
+   - 질문에 대해 "왜 그런지" 제도적/법적 이유와 배경을 이해하기 쉽게 설명하고, 실질적이고 합법적인 대안, 필요한 구비 서류, 현실적인 행동 절차를 체계적이고 구체적으로 안내하라.
+
+2. 비자 및 일반 지식 영역 (최신 법령 및 지식 기반의 상세한 답변):
+   - 비자(E-7, E-9, E-7-4, F계열 등), 체류 자격 연장/변경, 출입국관리법, 고용허가제, 조선소 안전 및 한국 생활 관련 지식은 현재 최신 기준을 검색·참조하여 정확하고 상세하게 답변하라.
+   - (예시 - E-7에서 E-9 변경 문의 시): E-7(특정활동/전문인력)과 E-9(비전문취업/고용허가제)의 성격 차이로 인해 대한민국 출입국관리법상 국내에서 체류자격 직접 변경이 원칙적으로 불가한 이유를 친절히 설명하고, 대안(E-7-4 점수제 숙련기능인력 전환, E-7 사업장 변경 요건, 혹은 출국 후 본국 송출기관을 통한 정식 EPS 재입국 절차 등)을 다각도로 상세히 안내하라.
+
+3. 중대/크리티컬 사안에 대한 사내 우선 해결 경로 안내 (필수 원칙):
+   - 임금/급여(임금체불, 급여 계산 착오, 퇴직금, 상여금), 산업재해/작업 중 부상(치료비, 보상), 법적 분쟁(폭언, 폭행, 부당 계약, 분쟁) 등 중대하고 민감한 사안은 외부 기관에 가기 전 **회사 내에서 최대한 우선적이고 신속하게 처리·구제받을 수 있도록** 아래 경로를 반드시 안내하라:
+     • **사내협력사(협력업체) 소속인 경우**: 1차적으로 **"소속 협력사 총무님(또는 현장 관리소장님)"**께 사실을 알리고 문의하여 회사 차원에서 우선적으로 해결할 수 있도록 안내한다.
+     • **직영(원청/본사) 소속인 경우**: 1차적으로 **"소속 부서 팀장님"**께 즉시 상황을 보고하고 면담을 신청하도록 안내한다.
+     • **언어 및 통역 지원**: 한국어로 상황을 설명하기 어렵거나 회사 관계자와 대화가 부담스러울 경우, **"외국인지원센터 통역창구(내선 2200)"** 또는 모국어 통역위원(베트남, 네팔, 우즈벡, 태국 등)에게 지원을 요청하면 상담 및 면담 자리에 동행하여 정확한 통역을 지원받을 수 있음을 든든하게 안내하라.
+
+4. 외국어 질의 시 자연스러운 원어민 뉘앙스 (직역 금지):
+   - 질문이 외국어이거나 응답 언어가 한국어가 아닌 경우(베트남어, 네팔어, 우즈베크어, 태국어, 인도네시아어, 러시아어, 스리랑카어, 영어 등):
+   - 번역기 같은 어색한 직역을 엄격히 배제하고, 해당 국가 출신의 현지인 전문 상담사가 모국어로 직접 이야기하듯 자연스럽고 유려한 표현, 공감과 격려가 담긴 따뜻한 경어체로 100% [${language || '한국어'}]로만 작성하라.
+
+5. 답변 구성 스타일:
+   - 공감 섞인 정중한 인사 -> 명확하고 자세한 설명 및 법적/제도적 배경 -> 현실적인 해결 대안 및 준비 사항 -> 사내 우선 처리 창구(협력사 총무님 / 직영 팀장님 및 센터 통역 지원) 순으로 가독성 좋게 정리하여 답변하라.
+${referenceText ? `\n[사내 규정 및 참고 자료]\n${referenceText}` : ''}`;
 
     // Token optimization: Keep only the latest 6 history turns to prevent token explosion
     const recentHistory = Array.isArray(history) ? history.slice(-6) : [];
@@ -1583,6 +1753,12 @@ ${referenceText ? `\n[사내 규정 및 참고 자료 (핵심만 참조)]\n${ref
 });
 
 async function startServer() {
+  const slidesPath = path.join(process.cwd(), 'public', 'slides');
+  if (!fs.existsSync(slidesPath)) {
+    fs.mkdirSync(slidesPath, { recursive: true });
+  }
+  app.use('/slides', express.static(slidesPath));
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },

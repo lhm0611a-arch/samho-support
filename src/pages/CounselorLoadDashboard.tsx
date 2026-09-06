@@ -13,6 +13,8 @@ import { format, subDays, isAfter, startOfMonth, isSameDay } from 'date-fns';
 import clsx from 'clsx';
 import { TicketDetailModal } from '../components/TicketDetailModal';
 import { CounselingTicket } from '../types';
+import { isCounselorId } from '../utils/counselorHelper';
+import { HDHyundaiCI } from '../components/HDHyundaiCI';
 
 export const CounselorLoadDashboard = () => {
   const { tickets } = useTicketStore();
@@ -69,8 +71,8 @@ export const CounselorLoadDashboard = () => {
       event?: any;
     }> = [];
 
-    // Filter counselors if limited by role or selection
-    let activeCounselors = counselors.filter(c => !c.id.toLowerCase().startsWith('admin'));
+    // Filter counselors if limited by role or selection (only IDs starting with 'cs' are counselors)
+    let activeCounselors = counselors.filter(c => isCounselorId(c.id));
     if (isCounselor && user?.uid) {
       activeCounselors = counselors.filter(c => c.id === user.uid);
     } else if (selectedCounselorId !== 'all') {
@@ -251,13 +253,17 @@ export const CounselorLoadDashboard = () => {
     <div className="flex flex-col h-full gap-4 md:gap-6 animate-fade-in-up pb-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 shrink-0">
-        <div>
-          <h2 className="text-[20.5px] font-bold text-gradient tracking-tight mb-2">
-            {isCounselor ? '나의 업무 실적' : '통역위원 업무 실적'}
-          </h2>
-          <p className="text-[12.375px] font-bold text-[#28fe00]">
-            {isCounselor ? '본인의 업무량 및 상담 횟수 통계' : '통역사별 업무량 및 상담 횟수 통계'}
-          </p>
+        <div className="flex items-center gap-3">
+          <HDHyundaiCI size="md" subtitle="업무 실적 통계" />
+          <div className="hidden sm:block h-6 w-[1px] bg-slate-700 mx-1" />
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+              {isCounselor ? '나의 통역 및 상담 실적' : '통역위원 종합 업무 실적'}
+            </h2>
+            <p className="text-[11px] font-medium text-slate-300">
+              {isCounselor ? '개인별 업무량 및 상담 횟수 상세 현황' : '통역위원별 업무 부하 및 상담 통계 지표'}
+            </p>
+          </div>
         </div>
         
         <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
@@ -270,7 +276,7 @@ export const CounselorLoadDashboard = () => {
                 className="w-full md:w-auto pl-9 pr-8 py-2 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500/50 appearance-none"
               >
                 <option value="all">전체 통역위원</option>
-                {counselors.filter(c => !c.id.toLowerCase().startsWith('admin')).map(c => (
+                {counselors.filter(c => isCounselorId(c.id)).map(c => (
                   <option key={c.id} value={c.id}>{c.name} ({c.country})</option>
                 ))}
               </select>

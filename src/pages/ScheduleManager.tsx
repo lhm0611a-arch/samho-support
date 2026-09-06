@@ -21,6 +21,7 @@ import { useFirestore } from '../hooks/useFirestore';
 import { format, addMinutes } from 'date-fns';
 import { TicketDetailModal } from '../components/TicketDetailModal';
 import { CounselingTicket } from '../types';
+import { HDHyundaiCI } from '../components/HDHyundaiCI';
 
 const TIME_OPTIONS = [
   "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -451,11 +452,14 @@ export const ScheduleManager = () => {
     <div className={`glass-panel p-3.5 sm:p-4 md:p-8 animate-fade-in-up flex flex-col relative w-full ${isMobile ? 'h-auto' : 'h-full min-h-0 overflow-hidden'}`}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-3 sm:mb-4 md:mb-6 gap-3 shrink-0">
         <div className="flex flex-col gap-2 w-full md:w-auto">
-          <div className="flex flex-wrap items-center justify-between md:justify-start gap-2.5">
-            <h2 className="text-base sm:text-xl md:text-3xl font-bold tracking-tight flex items-center gap-2 md:gap-3 text-[#f8fafc] whitespace-nowrap">
-              <CalendarIcon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-[#38bdf8] shrink-0" /> 
-              <span>통역사 일정 관리</span>
-            </h2>
+          <div className="flex flex-wrap items-center justify-between md:justify-start gap-3">
+            <div className="flex items-center gap-3">
+              <HDHyundaiCI size="sm" subtitle="일정 관리" />
+              <div className="hidden sm:block h-5 w-[1px] bg-slate-700 mx-0.5" />
+              <h2 className="text-base sm:text-xl font-bold tracking-tight text-[#f8fafc] whitespace-nowrap">
+                통역사 스케줄 현황
+              </h2>
+            </div>
             <div className="flex items-center gap-1.5 bg-[#051326] border border-[#1e3a5f] rounded-lg px-2.5 sm:px-3.5 py-1 shrink-0">
               <User className="w-3.5 h-3.5 text-[#94a3b8] shrink-0" />
               <select

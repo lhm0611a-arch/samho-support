@@ -11,6 +11,7 @@ import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
 import { CATEGORIES } from '../constants';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
+import { isCounselorId } from '../utils/counselorHelper';
 
 interface Props {
   ticket: CounselingTicket;
@@ -382,7 +383,7 @@ export const TicketDetailModal: React.FC<Props> = ({ ticket: initialTicket, onCl
                     disabled={ticket.status === '처리완료' && !isEditing}
                   >
                     <option value="">배정 안됨</option>
-                    {counselors.filter(c => (!ticket.country || c.country === ticket.country) && !c.isRetired).map(c => (
+                    {counselors.filter(c => isCounselorId(c.id) && (!ticket.country || c.country === ticket.country) && !c.isRetired).map(c => (
                       <option key={c.id} value={c.id}>{c.name} ({c.country})</option>
                     ))}
                   </select>

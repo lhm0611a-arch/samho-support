@@ -46,21 +46,13 @@
   }
 
   body {
-    background-color: #030f1c;
+    background-color: #020b17;
     color: #e2e8f0;
     font-family: 'HD Hyundai', 'Noto Sans KR', sans-serif;
     -webkit-font-smoothing: antialiased;
     font-size: 16px;
     word-break: keep-all;
     overflow-wrap: break-word;
-    background-image: 
-      radial-gradient(ellipse at 50% 0%, rgba(0, 44, 95, 0.45) 0%, transparent 70%),
-      linear-gradient(to bottom, rgba(3, 15, 28, 0.87), rgba(3, 15, 28, 0.93)),
-      url('/yard.png');
-    background-size: cover;
-    background-position: center top;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
     min-height: 100vh;
   }
 
@@ -73,30 +65,22 @@
 /* 톤앤매너 UI 컴포넌트 세트 */
 @layer components {
   .yard-bg {
-    background-color: #030f1c;
-    background-image: 
-      radial-gradient(ellipse at 50% 0%, rgba(0, 44, 95, 0.45) 0%, transparent 70%),
-      linear-gradient(to bottom, rgba(3, 15, 28, 0.87), rgba(3, 15, 28, 0.93)),
-      url('/yard.png');
-    background-size: cover;
-    background-position: center top;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
+    background-color: transparent;
   }
 
   /* 1. 패널 / 카드 컴포넌트 */
   .dx-card, .hud-card {
-    background: rgba(8, 23, 44, 0.92);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid #1e3a5f;
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
+    background: rgba(3, 19, 38, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(56, 189, 248, 0.30);
+    border-radius: 0.85rem;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.65), 0 4px 6px -2px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .dx-card:hover, .hud-card:hover {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-    border-color: #3b82f6;
+    box-shadow: 0 16px 36px -5px rgba(0, 0, 0, 0.55), 0 0 25px -4px rgba(14, 165, 233, 0.3);
+    border-color: rgba(56, 189, 248, 0.45);
   }
 
   /* 2. 입력 필드 (Input / Select) */
@@ -155,28 +139,31 @@
 
   /* 5. 고밀도 데이터 테이블 */
   .dx-table-wrapper {
-    border-radius: 0.75rem;
-    border: 1px solid #1e3a5f;
-    background: #08172c;
+    border-radius: 0.85rem;
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    background: rgba(8, 24, 48, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     overflow: hidden;
   }
   .dx-table th {
-    background: #051326;
+    background: rgba(4, 18, 38, 0.85);
     color: #38bdf8;
     font-size: 0.75rem;
     font-weight: 800;
-    padding: 6px 10px;
-    border-bottom: 1px solid #1e3a5f;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.15);
   }
   .dx-table td {
-    padding: 6px 10px;
-    border-bottom: 1px solid #1e3a5f;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(30, 58, 95, 0.4);
     font-size: 0.8125rem;
     font-weight: 600;
     color: #f8fafc;
   }
   .dx-table tr:hover td {
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: rgba(56, 189, 248, 0.06);
   }
   .dx-table tr:last-child td {
     border-bottom: none;
@@ -259,20 +246,22 @@
   }
 
   .glass-panel {
-    background: #08172c;
-    border: 1px solid #1e3a5f;
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
+    background: rgba(3, 19, 38, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    border-radius: 0.85rem;
+    box-shadow: 0 12px 36px -5px rgba(0, 0, 0, 0.65), 0 4px 6px -2px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    transition: all 0.25s ease;
   }
   
   .glass-panel-hover {
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
   }
   
   .glass-panel-hover:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    border-color: rgba(56, 189, 248, 0.45);
+    box-shadow: 0 16px 36px -5px rgba(0, 0, 0, 0.55), 0 0 25px -4px rgba(14, 165, 233, 0.3);
   }
 
   .text-gradient {

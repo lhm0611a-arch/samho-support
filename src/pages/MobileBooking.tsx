@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { safeFormat, safeDate } from '../utils/safeDate';
 import { useLanguageStore } from '../store/languageStore';
 import { useTranslation } from '../utils/translations';
+import { HDHyundaiCI } from '../components/HDHyundaiCI';
 
 export const MobileBooking = () => {
   const language = useLanguageStore(state => state.language);
@@ -285,45 +286,75 @@ export const MobileBooking = () => {
       )}
 
       
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 px-4 pt-4">
-        <button
-          onClick={() => setActiveTab('book')}
-          className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all ${
-            activeTab === 'book'
-              ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-              : 'bg-white/10 text-gray-400 hover:bg-white/20'
-          }`}
-        >
-          <div className="flex items-center justify-center gap-2">
-            <Plus className="w-4 h-4" /> 예약하기
-          </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('history')}
-          className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all ${
-            activeTab === 'history'
-              ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-              : 'bg-white/10 text-gray-400 hover:bg-white/20'
-          }`}
-        >
-          <div className="flex items-center justify-center gap-2">
-            <List className="w-4 h-4" /> 내 예약 목록
-          </div>
-        </button>
+      {/* HD Hyundai Samho Official CI Brand Banner */}
+      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+        <div className="p-2 px-3.5 bg-[#031326]/90 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-xl flex items-center gap-3">
+          <HDHyundaiCI size="sm" subtitle="외국인지원센터" />
+        </div>
+        <div className="text-right">
+          <span className="text-[10px] text-cyan-300 font-mono font-bold bg-[#031326]/90 px-2.5 py-1 rounded-lg border border-cyan-500/30 shadow-md">
+            BOOKING PORTAL
+          </span>
+        </div>
+      </div>
+      
+      {/* Tabs - High contrast dark glass dock */}
+      <div className="px-4 pt-4 mb-6">
+        <div className="flex gap-2 p-1.5 bg-[#031326]/95 backdrop-blur-2xl border border-cyan-500/35 rounded-2xl shadow-2xl">
+          <button
+            id="tab-book-btn"
+            type="button"
+            onClick={() => setActiveTab('book')}
+            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+              activeTab === 'book'
+                ? 'bg-white text-slate-950 shadow-md ring-1 ring-white/60'
+                : 'text-slate-200 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Plus className={`w-4 h-4 ${activeTab === 'book' ? 'text-slate-950' : 'text-cyan-400'}`} />
+              <span>{t('nav.book') || '예약하기'}</span>
+            </div>
+          </button>
+          <button
+            id="tab-history-btn"
+            type="button"
+            onClick={() => setActiveTab('history')}
+            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+              activeTab === 'history'
+                ? 'bg-white text-slate-950 shadow-md ring-1 ring-white/60'
+                : 'text-slate-200 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <List className={`w-4 h-4 ${activeTab === 'history' ? 'text-slate-950' : 'text-cyan-400'}`} />
+              <span>{t('nav.my_bookings') || '내 예약 목록'}</span>
+            </div>
+          </button>
+        </div>
       </div>
 
       {activeTab === 'history' && (
         <div className="px-4 space-y-4 animate-fade-in-up pb-8">
           {myTickets.length === 0 ? (
-            <div className="text-center py-16 text-gray-400 bg-white/5 rounded-2xl border border-white/10 border-dashed">
-              <List className="w-10 h-10 mx-auto text-gray-500 mb-3 opacity-50" />
-              <p className="text-sm">{t('my_bookings.empty')}</p>
+            <div className="text-center py-14 px-6 bg-[#031326]/95 backdrop-blur-2xl rounded-2xl border border-cyan-500/30 shadow-2xl">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-inner">
+                <List className="w-7 h-7" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-2">
+                {t('my_bookings.empty') || '접수된 예약 내역이 없습니다.'}
+              </h3>
+              <p className="text-xs text-slate-300 max-w-xs mx-auto mb-6 leading-relaxed">
+                필요하신 통역 또는 상담이 있으시면 언제든지 새로운 상담 예약을 신청해 주세요.
+              </p>
               <button 
+                id="empty-new-booking-btn"
+                type="button"
                 onClick={() => setActiveTab('book')}
-                className="mt-4 px-4 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition-colors text-white"
+                className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl text-sm shadow-lg shadow-cyan-900/40 border border-cyan-300/40 transition-all flex items-center gap-2 mx-auto"
               >
-                {t('nav.new_booking')}
+                <Plus className="w-4 h-4" />
+                <span>{t('nav.new_booking') || '새 상담 예약하기'}</span>
               </button>
             </div>
           ) : (
@@ -434,10 +465,19 @@ export const MobileBooking = () => {
           {/* Progress */}
 
       {step < 4 && (
-        <div className="flex gap-3 mb-10 mt-4 px-2">
-          {[1, 2, 3].map(s => (
-            <div key={s} className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${step >= s ? 'bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'bg-white/10'}`} />
-          ))}
+        <div className="mb-6 mt-2 px-4">
+          <div className="p-2 bg-[#031326]/95 backdrop-blur-md rounded-2xl border border-cyan-500/30 flex gap-2.5 items-center shadow-lg">
+            {[1, 2, 3].map(s => (
+              <div 
+                key={s} 
+                className={`h-2 flex-1 rounded-full transition-all duration-500 ${
+                  step >= s 
+                    ? 'bg-gradient-to-r from-cyan-400 to-emerald-400 shadow-[0_0_12px_rgba(56,189,248,0.6)]' 
+                    : 'bg-slate-700/80 border border-white/5'
+                }`} 
+              />
+            ))}
+          </div>
         </div>
       )}
 
@@ -593,22 +633,24 @@ export const MobileBooking = () => {
                 {['E-9', 'E-7'].map(v => (
                   <button
                     key={v}
+                    type="button"
                     onClick={() => setVisaType(v)}
-                    className={`flex-1 py-3 rounded-xl border text-sm font-medium transition-colors ${
+                    className={`flex-1 py-3 rounded-xl border text-sm font-bold transition-all ${
                       visaType === v 
-                        ? 'bg-white text-black border-white shadow-[0_0_10px_rgba(255,255,255,0.2)]' 
-                        : 'bg-apple-gray/50 text-gray-400 border-apple-border hover:bg-white/10 hover:text-white'
+                        ? 'bg-white text-slate-950 border-white shadow-md' 
+                        : 'bg-[#04162e]/90 text-slate-200 border-[#254a77] hover:bg-[#082347] hover:text-white'
                     }`}
                   >
                     {v}
                   </button>
                 ))}
                 <button
+                  type="button"
                   onClick={() => setVisaType('기타')}
-                  className={`flex-1 py-3 rounded-xl border text-sm font-medium transition-colors ${
+                  className={`flex-1 py-3 rounded-xl border text-sm font-bold transition-all ${
                     visaType === '기타' || (visaType !== 'E-9' && visaType !== 'E-7' && visaType !== '')
-                      ? 'bg-white text-black border-white shadow-[0_0_10px_rgba(255,255,255,0.2)]' 
-                      : 'bg-apple-gray/50 text-gray-400 border-apple-border hover:bg-white/10 hover:text-white'
+                      ? 'bg-white text-slate-950 border-white shadow-md' 
+                      : 'bg-[#04162e]/90 text-slate-200 border-[#254a77] hover:bg-[#082347] hover:text-white'
                   }`}
                 >
                   기타
@@ -619,7 +661,7 @@ export const MobileBooking = () => {
                   type="text"
                   value={visaType === '기타' ? '' : visaType}
                   onChange={e => setVisaType(e.target.value)}
-                  className="mt-3 w-full px-4 py-3 bg-apple-gray/50 border border-apple-border rounded-xl focus:ring-2 focus:ring-white/20 outline-none text-white transition-all glass-panel-hover"
+                  className="mt-3 w-full px-4 py-3 bg-[#031326]/95 border border-[#254a77] rounded-xl focus:ring-2 focus:ring-cyan-400 outline-none text-white transition-all shadow-inner"
                   placeholder="비자 종류를 입력하세요 (예: F-2)"
                 />
               )}
@@ -630,18 +672,19 @@ export const MobileBooking = () => {
 
       {/* Step 2: Category & Counselor */}
       {step === 2 && (
-        <div className="glass-panel p-8 w-full animate-fade-in-up space-y-10">
+        <div className="glass-panel p-6 md:p-8 w-full animate-fade-in-up space-y-8">
           <div>
-            <h2 className="text-2xl font-light text-gradient mb-6 tracking-tight">{t('step2.title')}</h2>
-            <div className="flex flex-wrap gap-3">
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-4 tracking-tight">{t('step2.title')}</h2>
+            <div className="flex flex-wrap gap-2.5">
               {CATEGORIES.map(cat => (
                 <button
                   key={cat}
+                  type="button"
                   onClick={() => setCategory(cat)}
-                  className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${
+                  className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${
                     category === cat 
-                      ? 'bg-white text-black border-transparent shadow-[0_0_15px_rgba(255,255,255,0.2)]' 
-                      : 'bg-apple-gray/50 text-gray-400 border-apple-border hover:bg-white/10 hover:text-white'
+                      ? 'bg-white text-slate-950 border-white shadow-md' 
+                      : 'bg-[#04162e]/90 text-slate-200 border-[#254a77] hover:bg-[#082347] hover:text-white'
                   }`}
                 >{t('category.' + cat as any)}</button>
               ))}
@@ -649,20 +692,21 @@ export const MobileBooking = () => {
           </div>
 
           <div>
-            <h2 className="text-2xl font-light text-gradient mb-6 tracking-tight">{t('step3.title')}</h2>
-            <div className="space-y-4">
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-4 tracking-tight">{t('step3.title')}</h2>
+            <div className="space-y-3">
               {useCounselorStore.getState().counselors.filter(c => c.country === selectedCountry).map(c => (
                 <button
                   key={c.id}
+                  type="button"
                   onClick={() => setSelectedCounselor(c)}
-                  className={`w-full flex items-center justify-between p-5 rounded-xl border transition-all duration-300 ${
+                  className={`w-full flex items-center justify-between p-4 md:p-5 rounded-xl border transition-all ${
                     selectedCounselor?.id === c.id 
-                      ? 'bg-white/10 border-white/30 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]' 
-                      : 'bg-apple-gray/50 border-apple-border text-gray-400 hover:bg-white/5 hover:border-white/20'
+                      ? 'bg-cyan-500/20 border-cyan-400 text-white shadow-lg shadow-cyan-950/40 ring-1 ring-cyan-400' 
+                      : 'bg-[#04162e]/90 border-[#254a77] text-slate-200 hover:bg-[#082347] hover:text-white'
                   }`}
                 >
-                  <span className="font-medium">{c.name}</span>
-                  {selectedCounselor?.id === c.id && <Check className="w-5 h-5 text-white" />}
+                  <span className="font-bold text-base">{c.name}</span>
+                  {selectedCounselor?.id === c.id && <Check className="w-5 h-5 text-cyan-400" />}
                 </button>
               ))}
             </div>
@@ -681,9 +725,9 @@ export const MobileBooking = () => {
               <div className="grid grid-cols-6 gap-2 mb-2">
                 <div className="text-center"></div>
                 {validDays.map((d, i) => (
-                    <div key={i} className="text-center text-xs font-semibold text-gray-400">
+                    <div key={i} className="text-center text-xs font-bold text-slate-200">
                       {format(d, 'MM/dd')}<br />
-                      <span className="text-[10px]">{format(d, 'E')}</span>
+                      <span className="text-[10px] text-cyan-400">{format(d, 'E')}</span>
                     </div>
                 ))}
               </div>
@@ -691,7 +735,7 @@ export const MobileBooking = () => {
               <div className="space-y-2">
                 {['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'].map(time => (
                   <div key={time} className="grid grid-cols-6 gap-2 items-center">
-                    <div className="text-center text-xs font-semibold text-gray-500">{time}</div>
+                    <div className="text-center text-xs font-bold text-slate-300">{time}</div>
                     {validDays.map((d, i) => {
                       const dateStr = d.toISOString().split('T')[0];
                       
@@ -725,19 +769,20 @@ export const MobileBooking = () => {
                       return (
                         <button
                           key={i}
+                          type="button"
                           disabled={!isAvailable}
                           onClick={() => {
                             setSelectedDate(dateStr);
                             setSelectedTime(time);
                           }}
-                          className={`py-2 rounded-lg text-xs font-medium transition-all duration-300 border ${
+                          className={`py-2.5 rounded-lg text-xs font-bold transition-all border ${
                             isSelected 
-                              ? 'bg-white text-black border-transparent shadow-[0_0_10px_rgba(255,255,255,0.3)]' 
+                              ? 'bg-white text-slate-950 border-white shadow-md ring-1 ring-white/60' 
                               : isLunch
-                                ? 'bg-orange-500/10 text-orange-400 border-orange-500/20 cursor-not-allowed'
+                                ? 'bg-orange-500/15 text-orange-300 border-orange-500/30 cursor-not-allowed'
                                 : isAvailable
-                                  ? 'bg-apple-gray/50 text-gray-300 border-apple-border hover:bg-white/10 hover:text-white'
-                                  : 'bg-black/20 text-gray-600 border-transparent cursor-not-allowed'
+                                  ? 'bg-[#04162e]/90 text-cyan-300 border-[#254a77] hover:bg-cyan-500/20 hover:text-white hover:border-cyan-400 shadow-sm'
+                                  : 'bg-black/40 text-slate-500 border-white/5 cursor-not-allowed'
                           }`}
                         >
                           {isLunch ? t('slot.lunch') : (isAvailable ? t('slot.available') : t('slot.closed'))}

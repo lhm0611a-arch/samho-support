@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 90" width="100%" height="100%" fill="none">
+  <!-- HD Hyundai Forward Mark (Signature Triangle Geometry) -->
+  <g transform="translate(10, 10)">
+    <!-- Right Vibrant Green Triangle (Forward Arrow Element) -->
+    <path d="M42 5 L72 35 L42 65 Z" fill="#00A859" />
+    <!-- Left Top Deep Navy Triangle -->
+    <path d="M10 5 L38 5 L38 33 Z" fill="#003770" />
+    <!-- Left Bottom Sky Cyan Triangle -->
+    <path d="M10 65 L38 65 L38 37 Z" fill="#005BAA" />
+    <!-- Dynamic Accent Wedge -->
+    <path d="M12 35 L38 35 L25 48 Z" fill="#00A859" opacity="0.9" />
+  </g>
+
+  <!-- Typography: HD Hyundai Samho -->
+  <g transform="translate(95, 0)">
+    <!-- HD in Bold Modern Sans -->
+    <text x="0" y="52" fill="#FFFFFF" font-family="'HD Hyundai', 'Pretendard', 'Noto Sans KR', sans-serif" font-weight="900" font-size="38" letter-spacing="-1">HD</text>
+    <!-- 현대삼호 in Balanced High-Legibility Bold Sans -->
+    <text x="64" y="52" fill="#FFFFFF" font-family="'HD Hyundai', 'Pretendard', 'Noto Sans KR', sans-serif" font-weight="700" font-size="33" letter-spacing="-1.5">현대삼호</text>
+    <!-- Subtitle: Foreign Worker Support Center -->
+    <text x="2" y="74" fill="#38BDF8" font-family="'HD Hyundai', 'Pretendard', 'Noto Sans KR', sans-serif" font-weight="600" font-size="12" letter-spacing="1.5">외국인지원센터</text>
+    <rect x="105" y="65" width="1" height="9" fill="#1E3A5F" />
+    <text x="115" y="74" fill="#94A3B8" font-family="'HD Hyundai', sans-serif" font-weight="500" font-size="10.5" letter-spacing="0.5">YARD DX SYSTEM</text>
+  </g>
+</svg>

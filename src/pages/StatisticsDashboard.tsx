@@ -6,11 +6,12 @@ import { useCounselorStore } from '../store/counselorStore';
 import { useScheduleStore } from '../store/scheduleStore';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
 import { COUNTRIES, CATEGORIES } from '../constants';
-import { Brain, TrendingUp, AlertTriangle, Users, Download, Calendar, X, FileText, Mail } from 'lucide-react';
+import { Brain, TrendingUp, AlertTriangle, Users, Download, Calendar, X, FileText, Mail, Printer } from 'lucide-react';
 import { format, subDays, isSameDay, startOfYear, startOfMonth, subMonths, isAfter } from 'date-fns';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import { HDHyundaiCI } from '../components/HDHyundaiCI';
 
 export const StatisticsDashboard = () => {
   const { tickets: allTickets } = useTicketStore();
@@ -243,12 +244,10 @@ export const StatisticsDashboard = () => {
   return (
     <div className="flex flex-col p-2 gap-4 sm:gap-6 animate-fade-in-up pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-1 sm:mb-2 gap-3 sm:gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-[#f8fafc] flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#00a859] shrink-0"></span>
-            <span>AI 통합 분석 센터</span>
-          </h2>
-          <p className="text-[#94a3b8] mt-1 text-xs sm:text-sm font-medium">실시간 상담 데이터 및 AI 예측 지표</p>
+        <div className="flex items-center gap-3">
+          <HDHyundaiCI size="md" subtitle="통합 분석 센터" />
+          <div className="hidden sm:block h-6 w-[1px] bg-slate-700 mx-1" />
+          <p className="hidden sm:block text-[#94a3b8] text-xs sm:text-sm font-medium">실시간 상담 데이터 및 AI 예측 지표</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full md:w-auto">
@@ -419,19 +418,41 @@ export const StatisticsDashboard = () => {
 
       {/* Report Modal */}
       {showReportModal && createPortal(
-        <div className="fixed top-0 left-0 w-full h-[100dvh] bg-black/80 backdrop-blur-md flex items-center justify-center z-[100] p-3 sm:p-4">
-          <div className="dx-card w-full max-w-3xl flex flex-col max-h-[90vh] animate-fade-in-up border border-[#1e3a5f] shadow-[0_10px_40px_rgba(0,0,0,0.7)]">
-            <div className="px-4 sm:px-6 py-4 border-b border-[#1e3a5f] flex justify-between items-center bg-[#051326] shrink-0">
-              <h2 className="text-base sm:text-lg font-bold text-[#f8fafc] flex items-center gap-2">
-                <FileText className="w-5 h-5 text-[#38bdf8]" />
-                <span>AI 심층 실적 분석 보고서</span>
-              </h2>
-              <button onClick={() => setShowReportModal(false)} className="p-1.5 hover:bg-[#1e3a5f] rounded-lg text-[#94a3b8] hover:text-white transition-colors">
+        <div className="fixed top-0 left-0 w-full h-[100dvh] bg-black/85 backdrop-blur-md flex items-center justify-center z-[100] p-3 sm:p-4 print:p-0 print:bg-white">
+          <div className="dx-card w-full max-w-4xl flex flex-col max-h-[92vh] animate-fade-in-up border border-[#1e3a5f] shadow-[0_10px_40px_rgba(0,0,0,0.7)] print:border-none print:shadow-none print:max-h-none print:bg-white print:text-black">
+            {/* Modal Header */}
+            <div className="px-4 sm:px-6 py-3.5 border-b border-[#1e3a5f] flex justify-between items-center bg-[#051326] shrink-0 print:hidden">
+              <div className="flex items-center gap-3">
+                <HDHyundaiCI size="sm" subtitle="실적 분석 보고서" />
+              </div>
+              <button 
+                onClick={() => setShowReportModal(false)} 
+                className="p-1.5 hover:bg-[#1e3a5f] rounded-lg text-[#94a3b8] hover:text-white transition-colors"
+                aria-label="닫기"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
             
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1 custom-scrollbar markdown-body">
+            {/* Modal Body with Official Document Letterhead */}
+            <div className="p-4 sm:p-7 overflow-y-auto flex-1 custom-scrollbar markdown-body print:p-0">
+              {/* Official HD Hyundai Samho Report Letterhead */}
+              <div className="mb-6 p-4 rounded-xl bg-[#031326] border border-cyan-500/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:bg-slate-50 print:border-slate-300 print:text-black">
+                <div>
+                  <HDHyundaiCI size="md" subtitle="외국인지원센터" />
+                  <div className="mt-2 text-xs text-slate-400 print:text-slate-600">
+                    <p>HD Hyundai Samho Foreign Worker Support Center Official Analytics</p>
+                  </div>
+                </div>
+                <div className="text-left sm:text-right text-xs space-y-1 text-slate-300 print:text-slate-700">
+                  <div className="inline-block px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/40 text-[11px] font-bold text-cyan-300 print:bg-slate-200 print:text-black print:border-slate-400">
+                    문서분류: 사내 대외비 (실적분석)
+                  </div>
+                  <p className="font-mono text-[11px] text-slate-400">문서번호: HDS-FWSC-{format(new Date(), 'yyyyMMdd-HHmm')}</p>
+                  <p className="text-[11px] text-slate-400">발행일시: {format(new Date(), 'yyyy년 MM월 dd일 HH:mm')} KST</p>
+                </div>
+              </div>
+
               {isGenerating && !report ? (
                 <div className="flex flex-col items-center justify-center py-16 text-[#38bdf8]">
                   <div className="w-10 h-10 border-4 border-[#38bdf8] border-t-transparent rounded-full animate-spin mb-4" />
@@ -439,28 +460,45 @@ export const StatisticsDashboard = () => {
                   <p className="text-xs sm:text-sm text-[#94a3b8] mt-2 text-center">전체 상담 데이터, 긴급 Red Flag 케이스 및 통역 실적을 종합 분석합니다.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto text-sm leading-relaxed text-[#e2e8f0]">
+                <div className="overflow-x-auto text-sm leading-relaxed text-[#e2e8f0] print:text-black">
                   <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{report?.replace(/valign=(["'][^"']*["']|[^\s>]+)/gi, '')}</Markdown>
                 </div>
               )}
             </div>
             
-            <div className="p-3 sm:p-4 border-t border-[#1e3a5f] bg-[#051326] flex flex-wrap justify-end gap-2.5 shrink-0">
-              {!isGenerating && report && (
+            {/* Modal Actions */}
+            <div className="p-3 sm:p-4 border-t border-[#1e3a5f] bg-[#051326] flex flex-wrap justify-between items-center gap-2.5 shrink-0 print:hidden">
+              <div className="text-xs text-slate-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>HD현대삼호 AI 실적 보고서 시스템</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {!isGenerating && report && (
+                  <>
+                    <button 
+                      onClick={() => window.print()}
+                      className="px-3.5 sm:px-4 py-2 bg-[#04162e] hover:bg-[#082449] border border-cyan-500/40 rounded-lg text-cyan-300 hover:text-white text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                      title="보고서 인쇄 또는 PDF 저장"
+                    >
+                      <Printer className="w-4 h-4" />
+                      <span>인쇄 / PDF</span>
+                    </button>
+                    <button 
+                      onClick={handleSendTestEmail}
+                      disabled={isSendingEmail}
+                      className="px-4 sm:px-5 py-2 bg-[#002c5f] hover:bg-[#003770] border border-[#1e3a5f] rounded-lg text-white text-xs sm:text-sm font-bold transition-all disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {isSendingEmail ? '전송 중...' : '이메일 발송'}
+                    </button>
+                  </>
+                )}
                 <button 
-                  onClick={handleSendTestEmail}
-                  disabled={isSendingEmail}
-                  className="px-4 sm:px-5 py-2 bg-[#002c5f] hover:bg-[#003770] border border-[#1e3a5f] rounded-lg text-white text-xs sm:text-sm font-bold transition-all disabled:opacity-50 whitespace-nowrap"
+                  onClick={() => setShowReportModal(false)}
+                  className="px-4 sm:px-5 py-2 bg-[#00a859] hover:bg-[#00c268] rounded-lg text-white text-xs sm:text-sm font-bold transition-all shadow-[0_0_15px_rgba(0,168,89,0.3)] whitespace-nowrap"
                 >
-                  {isSendingEmail ? '전송 중...' : '이메일 발송'}
+                  확인 / 닫기
                 </button>
-              )}
-              <button 
-                onClick={() => setShowReportModal(false)}
-                className="px-4 sm:px-5 py-2 bg-[#00a859] hover:bg-[#00c268] rounded-lg text-white text-xs sm:text-sm font-bold transition-all shadow-[0_0_15px_rgba(0,168,89,0.3)] whitespace-nowrap"
-              >
-                확인 / 닫기
-              </button>
+              </div>
             </div>
           </div>
         </div>,
