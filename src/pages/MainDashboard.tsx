@@ -152,51 +152,83 @@ export const MainDashboard = () => {
 
     if (sortConfig) {
       result.sort((a, b) => {
-        let aValue;
-        let bValue;
-        
         switch (sortConfig.key) {
-          case 'counselor':
-            aValue = counselors.find(c => c.id === a.counselor_id)?.name || a.counselor_id || '';
-            bValue = counselors.find(c => c.id === b.counselor_id)?.name || b.counselor_id || '';
-            break;
-          case 'worker':
-            aValue = a.worker_name || '';
-            bValue = b.worker_name || '';
-            break;
-          case 'emp_id':
-            aValue = a.emp_id || '';
-            bValue = b.emp_id || '';
-            break;
-          case 'company':
-            aValue = a.company_code || '';
-            bValue = b.company_code || '';
-            break;
-          case 'status':
-            aValue = a.status;
-            bValue = b.status;
-            break;
-          case 'category':
-            aValue = a.category;
-            bValue = b.category;
-            break;
-          case 'urgency':
+          case 'counselor': {
+            const aName = counselors.find(c => c.id === a.counselor_id)?.name || a.counselor_id || '';
+            const bName = counselors.find(c => c.id === b.counselor_id)?.name || b.counselor_id || '';
+            const comp = aName.localeCompare(bName, 'ko');
+            return sortConfig.direction === 'asc' ? comp : -comp;
+          }
+          case 'worker': {
+            const aName = a.worker_name || a.worker_id || '';
+            const bName = b.worker_name || b.worker_id || '';
+            const comp = aName.localeCompare(bName, 'ko');
+            return sortConfig.direction === 'asc' ? comp : -comp;
+          }
+          case 'created_at':
+          case 'date': {
+            const aTime = a.created_at ? safeDate(a.created_at).getTime() : 0;
+            const bTime = b.created_at ? safeDate(b.created_at).getTime() : 0;
+            const diff = aTime - bTime;
+            return sortConfig.direction === 'asc' ? diff : -diff;
+          }
+          case 'reservation_time': {
+            const aHas = !!a.reservation_time;
+            const bHas = !!b.reservation_time;
+            if (!aHas && !bHas) return 0;
+            if (!aHas) return 1; // 미지정은 항상 목록 뒤로
+            if (!bHas) return -1;
+            const aTime = safeDate(a.reservation_time).getTime();
+            const bTime = safeDate(b.reservation_time).getTime();
+            const diff = aTime - bTime;
+            return sortConfig.direction === 'asc' ? diff : -diff;
+          }
+          case 'country': {
+            const aCountry = cleanCountryName(a.country || '');
+            const bCountry = cleanCountryName(b.country || '');
+            const comp = aCountry.localeCompare(bCountry, 'ko');
+            return sortConfig.direction === 'asc' ? comp : -comp;
+          }
+          case 'visa_type': {
+            const aVisa = a.visa_type || '';
+            const bVisa = b.visa_type || '';
+            const comp = aVisa.localeCompare(bVisa, 'ko');
+            return sortConfig.direction === 'asc' ? comp : -comp;
+          }
+          case 'emp_id': {
+            const aEmp = a.emp_id || '';
+            const bEmp = b.emp_id || '';
+            const comp = aEmp.localeCompare(bEmp, 'ko');
+            return sortConfig.direction === 'asc' ? comp : -comp;
+          }
+          case 'company': {
+            const aCompany = a.company_code || '';
+            const bCompany = b.company_code || '';
+            const comp = aCompany.localeCompare(bCompany, 'ko');
+            return sortConfig.direction === 'asc' ? comp : -comp;
+          }
+          case 'status': {
+            const aStatus = a.status || '';
+            const bStatus = b.status || '';
+            const comp = aStatus.localeCompare(bStatus, 'ko');
+            return sortConfig.direction === 'asc' ? comp : -comp;
+          }
+          case 'category': {
+            const aCat = a.category || '';
+            const bCat = b.category || '';
+            const comp = aCat.localeCompare(bCat, 'ko');
+            return sortConfig.direction === 'asc' ? comp : -comp;
+          }
+          case 'urgency': {
             const urgencyWeight = { 'high': 3, 'medium': 2, 'low': 1 };
-            aValue = urgencyWeight[a.urgency as keyof typeof urgencyWeight] || 0;
-            bValue = urgencyWeight[b.urgency as keyof typeof urgencyWeight] || 0;
-            break;
-          case 'date':
-            aValue = a.created_at || 0;
-            bValue = b.created_at || 0;
-            break;
+            const aWeight = urgencyWeight[a.urgency as keyof typeof urgencyWeight] || 0;
+            const bWeight = urgencyWeight[b.urgency as keyof typeof urgencyWeight] || 0;
+            const diff = aWeight - bWeight;
+            return sortConfig.direction === 'asc' ? diff : -diff;
+          }
           default:
-            aValue = '';
-            bValue = '';
+            return 0;
         }
-        
-        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
       });
     } else {
       if (statusFilter === '접수대기') {
@@ -623,6 +655,39 @@ export const MainDashboard = () => {
             </div>
           ) : (
             <>
+              {/* Mobile Sort Bar */}
+              <div className="block md:hidden px-3 pt-3 pb-1 border-b border-[#1e3a5f]/40">
+                <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1">
+                  <span className="text-[11px] font-medium text-gray-400 shrink-0 mr-1">정렬:</span>
+                  {[
+                    { key: 'created_at', label: '접수일시' },
+                    { key: 'reservation_time', label: '예약일시' },
+                    { key: 'country', label: '국가' },
+                    { key: 'visa_type', label: '비자' },
+                    { key: 'worker', label: '근로자' },
+                    { key: 'status', label: '상태' }
+                  ].map(item => (
+                    <button
+                      key={item.key}
+                      onClick={() => handleSort(item.key)}
+                      className={clsx(
+                        "px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border flex items-center gap-1 shrink-0",
+                        sortConfig?.key === item.key
+                          ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-sm"
+                          : "bg-[#04162e] text-gray-300 border-[#1e3a5f] hover:text-white"
+                      )}
+                    >
+                      <span>{item.label}</span>
+                      {sortConfig?.key === item.key ? (
+                        sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3 text-cyan-400" /> : <ArrowDown className="w-3 h-3 text-cyan-400" />
+                      ) : (
+                        <ArrowUpDown className="w-2.5 h-2.5 opacity-40" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Mobile Card View */}
               <div className="block md:hidden p-3 space-y-2.5">
                 {filteredTickets.map(ticket => (
