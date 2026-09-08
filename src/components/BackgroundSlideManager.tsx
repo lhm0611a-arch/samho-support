@@ -14,6 +14,7 @@ export const BackgroundSlideManager: React.FC = () => {
     toggleSlide,
     removeSlide,
     addSlide,
+    setSlides,
     setCurrentSlideIndex,
     updateSlideName,
     loadInitialSlides
@@ -75,20 +76,25 @@ export const BackgroundSlideManager: React.FC = () => {
       }
 
       const data = await res.json();
-      const customName = slideTitle.trim() || data.name.replace(/\.[^/.]+$/, '') || '업로드된 사진';
+      const customName = slideTitle.trim() || data.name?.replace(/\.[^/.]+$/, '') || '업로드된 사진';
 
-      const newSlide: BackgroundSlide = {
-        id: data.id || `slide-${Date.now()}`,
-        name: customName,
-        url: data.url,
-        enabled: true,
-        filename: data.filename,
-        createdAt: new Date().toISOString()
-      };
+      if (Array.isArray(data.slides)) {
+        setSlides(data.slides);
+        setCurrentSlideIndex(data.slides.length - 1);
+      } else {
+        const newSlide: BackgroundSlide = {
+          id: data.id || `slide-${Date.now()}`,
+          name: customName,
+          url: data.url,
+          enabled: true,
+          filename: data.filename,
+          createdAt: new Date().toISOString()
+        };
+        addSlide(newSlide);
+      }
 
-      addSlide(newSlide);
       setSlideTitle('');
-      setUploadSuccessMsg(`"${customName}" 사진이 슬라이드쇼에 성공적으로 등록되었습니다!`);
+      setUploadSuccessMsg(`"${customName}" 사진이 슬라이드쇼에 성공적으로 등록되었습니다! (모든 기기에 즉시 반영)`);
       setTimeout(() => setUploadSuccessMsg(''), 5000);
     } catch (err: any) {
       console.error(err);
@@ -113,10 +119,16 @@ export const BackgroundSlideManager: React.FC = () => {
     }
 
     try {
-      if (slide.filename) {
-        await fetch(`/api/bg-slides/${encodeURIComponent(slide.filename)}`, {
-          method: 'DELETE'
-        });
+      const deleteKey = slide.filename || slide.id;
+      const res = await fetch(`/api/bg-slides/${encodeURIComponent(deleteKey)}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.slides)) {
+          setSlides(data.slides);
+          return;
+        }
       }
       removeSlide(slide.id);
     } catch (err) {

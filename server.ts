@@ -1407,6 +1407,152 @@ app.post('/api/upload-yard-bg', upload.single('yard'), (req: any, res) => {
   }
 });
 
+// Background Slide Management Helpers
+const BG_SLIDES_CONFIG_PATH = path.join(process.cwd(), 'bg_slides_config.json');
+
+interface SlideConfigItem {
+  id: string;
+  name: string;
+  url: string;
+  enabled: boolean;
+  isDefault?: boolean;
+  filename?: string;
+  createdAt?: string;
+}
+
+interface BgSlidesConfig {
+  slides: SlideConfigItem[];
+  intervalSeconds: number;
+}
+
+function scanAvailableSlidesOnDisk(): SlideConfigItem[] {
+  const publicDir = path.join(process.cwd(), 'public');
+  const slidesDir = path.join(publicDir, 'slides');
+  const result: SlideConfigItem[] = [];
+
+  // 1. Check known base images in /public
+  const knownPublicImages: { file: string; id: string; name: string }[] = [
+    { file: 'yard.png', id: 'yard-default', name: 'HD현대삼호 조선소 야드 전경 (기본)' },
+    { file: 'bg3.png', id: 'yard-bg3', name: 'HD현대삼호 선박 건조 전경 (bg3)' },
+    { file: 'bg4.png', id: 'yard-bg4', name: 'HD현대삼호 골리앗 크레인 전경 (bg4)' },
+    { file: 'bg5.png', id: 'yard-bg5', name: 'HD현대삼호 야드 항공 전경 (bg5)' },
+  ];
+
+  for (const item of knownPublicImages) {
+    if (fs.existsSync(path.join(publicDir, item.file))) {
+      result.push({
+        id: item.id,
+        name: item.name,
+        url: `/${item.file}`,
+        enabled: true,
+        isDefault: true,
+        filename: item.file,
+        createdAt: '2026-01-01T00:00:00.000Z'
+      });
+    }
+  }
+
+  // 2. Scan other images in /public matching bg* or yard*
+  if (fs.existsSync(publicDir)) {
+    try {
+      const publicFiles = fs.readdirSync(publicDir);
+      for (const file of publicFiles) {
+        if (!/\.(png|jpe?g|webp|gif|svg)$/i.test(file)) continue;
+        if (['ci.png'].includes(file.toLowerCase())) continue; // Skip CI logo
+        if (knownPublicImages.some(k => k.file === file)) continue; // Already added
+
+        const cleanName = file.replace(/\.[^/.]+$/, '');
+        result.push({
+          id: `public-${file}`,
+          name: `HD현대삼호 야드 풍경 (${cleanName})`,
+          url: `/${file}`,
+          enabled: true,
+          isDefault: true,
+          filename: file,
+          createdAt: new Date().toISOString()
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to scan publicDir:', e);
+    }
+  }
+
+  // 3. Scan images in /public/slides
+  if (fs.existsSync(slidesDir)) {
+    try {
+      const slideFiles = fs.readdirSync(slidesDir);
+      for (const file of slideFiles) {
+        if (!/\.(png|jpe?g|webp|gif|svg)$/i.test(file)) continue;
+        const cleanName = file.replace(/^slide_\d+_/, '').replace(/\.[^/.]+$/, '');
+        result.push({
+          id: file,
+          name: cleanName || file,
+          url: `/slides/${file}`,
+          enabled: true,
+          filename: file,
+          createdAt: new Date().toISOString()
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to scan slidesDir:', e);
+    }
+  }
+
+  return result;
+}
+
+function loadBgSlidesConfig(): BgSlidesConfig {
+  const diskSlides = scanAvailableSlidesOnDisk();
+  let config: BgSlidesConfig = {
+    slides: diskSlides,
+    intervalSeconds: 5
+  };
+
+  if (fs.existsSync(BG_SLIDES_CONFIG_PATH)) {
+    try {
+      const raw = fs.readFileSync(BG_SLIDES_CONFIG_PATH, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.slides)) {
+        // Merge disk slides so that any newly added images on GitHub/public are NEVER lost
+        const savedSlides: SlideConfigItem[] = parsed.slides;
+        const merged: SlideConfigItem[] = [];
+
+        // Add saved slides
+        for (const s of savedSlides) {
+          merged.push(s);
+        }
+
+        // Add any disk slide not already in savedSlides
+        for (const diskSlide of diskSlides) {
+          const exists = merged.some(m => m.id === diskSlide.id || m.url === diskSlide.url);
+          if (!exists) {
+            merged.push(diskSlide);
+          }
+        }
+
+        config = {
+          slides: merged.length > 0 ? merged : diskSlides,
+          intervalSeconds: typeof parsed.intervalSeconds === 'number' ? parsed.intervalSeconds : 5
+        };
+      }
+    } catch (e) {
+      console.error('Failed to read bg_slides_config.json:', e);
+    }
+  } else {
+    saveBgSlidesConfig(config);
+  }
+
+  return config;
+}
+
+function saveBgSlidesConfig(config: BgSlidesConfig) {
+  try {
+    fs.writeFileSync(BG_SLIDES_CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8');
+  } catch (e) {
+    console.error('Failed to save bg_slides_config.json:', e);
+  }
+}
+
 // Upload new background slide (yard photo, counselor photos, team pictures)
 app.post('/api/upload-bg-slide', upload.single('image'), (req: any, res) => {
   try {
@@ -1423,13 +1569,29 @@ app.post('/api/upload-bg-slide', upload.single('image'), (req: any, res) => {
     const filePath = path.join(publicSlidesDir, filename);
     fs.writeFileSync(filePath, req.file.buffer);
     const url = `/slides/${filename}`;
+    
+    const newSlide: SlideConfigItem = {
+      id: filename,
+      name: req.file.originalname.replace(/\.[^/.]+$/, ''),
+      url,
+      enabled: true,
+      filename,
+      createdAt: new Date().toISOString()
+    };
+
+    const currentConfig = loadBgSlidesConfig();
+    currentConfig.slides.push(newSlide);
+    saveBgSlidesConfig(currentConfig);
+
     console.log(`Saved background slide: ${url}`);
     res.json({ 
       success: true, 
       url, 
-      name: req.file.originalname, 
+      name: newSlide.name, 
       filename,
-      id: filename
+      id: filename,
+      slide: newSlide,
+      slides: currentConfig.slides
     });
   } catch (err: any) {
     console.error('Failed to save background slide:', err);
@@ -1437,41 +1599,54 @@ app.post('/api/upload-bg-slide', upload.single('image'), (req: any, res) => {
   }
 });
 
-// List existing uploaded background slides
+// List all existing background slides with interval configuration (shared across all devices)
 app.get('/api/bg-slides', (req, res) => {
   try {
-    const publicSlidesDir = path.join(process.cwd(), 'public', 'slides');
-    if (!fs.existsSync(publicSlidesDir)) {
-      return res.json({ slides: [] });
-    }
-    const files = fs.readdirSync(publicSlidesDir);
-    const slides = files
-      .filter(f => /\.(png|jpe?g|webp|gif|svg)$/i.test(f))
-      .map(f => {
-        const cleanName = f.replace(/^slide_\d+_/, '').replace(/\.[^/.]+$/, '');
-        return {
-          id: f,
-          name: cleanName || f,
-          url: `/slides/${f}`,
-          filename: f
-        };
-      });
-    res.json({ slides });
+    const config = loadBgSlidesConfig();
+    res.json(config);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update slide settings (reorder, toggle, name change, interval) shared across all devices
+app.post('/api/bg-slides/config', express.json(), (req, res) => {
+  try {
+    const { slides, intervalSeconds } = req.body;
+    const current = loadBgSlidesConfig();
+    const updated: BgSlidesConfig = {
+      slides: Array.isArray(slides) ? slides : current.slides,
+      intervalSeconds: typeof intervalSeconds === 'number' ? intervalSeconds : current.intervalSeconds
+    };
+    saveBgSlidesConfig(updated);
+    res.json({ success: true, ...updated });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // Delete a background slide
-app.delete('/api/bg-slides/:filename', (req, res) => {
+app.delete('/api/bg-slides/:id', (req, res) => {
   try {
-    const filename = path.basename(req.params.filename);
-    const filePath = path.join(process.cwd(), 'public', 'slides', filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      console.log(`Deleted background slide: ${filename}`);
+    const id = decodeURIComponent(req.params.id);
+    const currentConfig = loadBgSlidesConfig();
+    const slideToDelete = currentConfig.slides.find(s => s.id === id || s.filename === id);
+    
+    if (slideToDelete?.filename) {
+      const filePath = path.join(process.cwd(), 'public', 'slides', slideToDelete.filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`Deleted background slide file: ${slideToDelete.filename}`);
+      }
     }
-    res.json({ success: true });
+
+    currentConfig.slides = currentConfig.slides.filter(s => s.id !== id && s.filename !== id);
+    if (currentConfig.slides.length === 0) {
+      currentConfig.slides = scanAvailableSlidesOnDisk();
+    }
+    saveBgSlidesConfig(currentConfig);
+
+    res.json({ success: true, slides: currentConfig.slides });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -1753,11 +1928,13 @@ ${referenceText ? `\n[사내 규정 및 참고 자료]\n${referenceText}` : ''}`
 });
 
 async function startServer() {
-  const slidesPath = path.join(process.cwd(), 'public', 'slides');
+  const publicPath = path.join(process.cwd(), 'public');
+  const slidesPath = path.join(publicPath, 'slides');
   if (!fs.existsSync(slidesPath)) {
     fs.mkdirSync(slidesPath, { recursive: true });
   }
   app.use('/slides', express.static(slidesPath));
+  app.use(express.static(publicPath));
 
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

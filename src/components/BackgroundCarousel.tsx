@@ -20,9 +20,24 @@ export const BackgroundCarousel: React.FC<Props> = ({ showControls = false }) =>
 
   const [isWidgetHovered, setIsWidgetHovered] = useState(false);
 
-  // Sync slides from server on mount
+  // Sync slides from server on mount, on focus, and periodically for multi-device sync
   useEffect(() => {
     loadInitialSlides();
+
+    const handleFocus = () => {
+      loadInitialSlides();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Periodic check every 30 seconds so all PCs and mobile devices receive newly uploaded slides automatically
+    const syncInterval = setInterval(() => {
+      loadInitialSlides();
+    }, 30000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(syncInterval);
+    };
   }, [loadInitialSlides]);
 
   // Filter to only enabled slides
