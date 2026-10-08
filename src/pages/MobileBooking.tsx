@@ -7,7 +7,7 @@ import { db } from '../lib/firebase';
 import { useAuthStore } from '../store/authStore';
 import { Company, Counselor } from '../types';
 import { searchCompanies, debounce } from '../lib/hangulSearch';
-import { DUMMY_COMPANIES, CATEGORIES, COUNTRIES, cleanCountryName } from '../constants';
+import { DUMMY_COMPANIES, CATEGORIES, CATEGORY_GROUPS, COUNTRIES, cleanCountryName } from '../constants';
 import { useCounselorStore } from '../store/counselorStore';
 import { useScheduleStore } from '../store/scheduleStore';
 import { useTicketStore } from '../store/ticketStore';
@@ -55,6 +55,54 @@ export const MobileBooking = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [deletingTicketId, setDeletingTicketId] = useState<string | null>(null);
+
+  // Editing reservation date state (30 min unit direct modification)
+  const [editingTicket, setEditingTicket] = useState<any | null>(null);
+  const [editDate, setEditDate] = useState('');
+  const [editTime, setEditTime] = useState('');
+  const [isUpdatingDate, setIsUpdatingDate] = useState(false);
+
+  const handleOpenEditModal = (t: any) => {
+    setEditingTicket(t);
+    if (t.reservation_time) {
+      const dt = safeDate(t.reservation_time);
+      setEditDate(format(dt, 'yyyy-MM-dd'));
+      setEditTime(format(dt, 'HH:mm'));
+    } else {
+      setEditDate('');
+      setEditTime('');
+    }
+  };
+
+  const handleUpdateBookingDate = async () => {
+    if (!editingTicket || !editingTicket.id) return;
+    if (!editDate || !editTime) {
+      alert('변경하실 상담 날짜와 시간을 선택해주세요.');
+      return;
+    }
+    setIsUpdatingDate(true);
+    try {
+      const newStart = `${editDate}T${editTime}:00`;
+      const startDateObj = new Date(newStart);
+      const newEnd = new Date(startDateObj.getTime() + 30 * 60000).toISOString();
+
+      await updateTicket(editingTicket.id, {
+        reservation_time: newStart,
+        reservation_end_time: newEnd,
+      });
+
+      setToastMessage('예약 일정이 30분 단위 일정으로 성공적으로 변경되었습니다.');
+      setEditingTicket(null);
+      setEditDate('');
+      setEditTime('');
+    } catch (err) {
+      console.error(err);
+      setToastMessage('일정 변경 중 오류가 발생했습니다.');
+    } finally {
+      setIsUpdatingDate(false);
+      setTimeout(() => setToastMessage(''), 3000);
+    }
+  };
 
   // Form State
   const [name, setName] = useState(user?.name || '');
@@ -198,6 +246,9 @@ export const MobileBooking = () => {
     let finalRequiredAction = '';
 
     try {
+      const startDateTimeStr = selectedDate && selectedTime ? `${selectedDate}T${selectedTime}:00` : '';
+      const endDateTimeStr = startDateTimeStr ? new Date(new Date(startDateTimeStr).getTime() + 30 * 60000).toISOString() : '';
+
       const ticketData = {
         worker_id: user.uid,
         worker_name: name,
@@ -214,7 +265,10 @@ export const MobileBooking = () => {
         urgency: finalUrgency,
         red_flag: finalRedFlag,
         required_action: finalRequiredAction,
-        ...(selectedDate && selectedTime ? { reservation_time: `${selectedDate}T${selectedTime}:00` } : {}),
+        ...(startDateTimeStr ? { 
+          reservation_time: startDateTimeStr,
+          reservation_end_time: endDateTimeStr 
+        } : {}),
         worker_password: workerPassword
       };
 
@@ -402,19 +456,180 @@ export const MobileBooking = () => {
                 
                 <div className="mt-4 flex justify-between items-center">
                   <span className="text-[10px] text-gray-500">{t('my_bookings.ticket_num')}: {ticket.id?.substring(0, 8)}</span>
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      setDeletingTicketId(ticket.id!);
-                    }}
-                    className="px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg text-xs font-medium transition-colors z-10 relative"
-                  >
-                    삭제
-                  </button>
+                  <div className="flex gap-2">
+                    {ticket.status !== '처리완료' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEditModal(ticket);
+                        }}
+                        className="px-3 py-1.5 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 rounded-lg text-xs font-semibold transition-colors border border-cyan-500/30 shadow-sm"
+                      >
+                        일정 변경
+                      </button>
+                    )}
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        setDeletingTicketId(ticket.id!);
+                      }}
+                      className="px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg text-xs font-medium transition-colors z-10 relative"
+                    >
+                      삭제
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
           )}
+        </div>
+      )}
+
+      {/* Edit Booking Reschedule Modal */}
+      {editingTicket && (
+        <div className="fixed top-0 left-0 w-full h-[100dvh] bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-[#031326] border border-cyan-500/30 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-fade-in-up p-5">
+            <div className="flex justify-between items-center pb-3 border-b border-white/10 mb-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                  상담 예약 일정 변경 (30분 단위)
+                </h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {editingTicket.worker_name}님의 {editingTicket.category} 상담 일정을 변경합니다.
+                </p>
+              </div>
+              <button 
+                onClick={() => setEditingTicket(null)}
+                className="text-gray-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Current schedule info */}
+            <div className="p-3 bg-white/5 rounded-xl border border-white/10 mb-4 text-xs">
+              <span className="text-gray-400 block mb-1">현재 예약 일시:</span>
+              <span className="font-semibold text-cyan-300">
+                {editingTicket.reservation_time 
+                  ? safeFormat(editingTicket.reservation_time, 'yyyy년 MM월 dd일 HH:mm') 
+                  : '미지정'}
+              </span>
+            </div>
+
+            {/* Select Date */}
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-gray-300 uppercase mb-2">변경할 상담 날짜 선택</label>
+              <div className="grid grid-cols-5 gap-2">
+                {validDays.map((d, idx) => {
+                  const dStr = d.toISOString().split('T')[0];
+                  const isDateSelected = editDate === dStr;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setEditDate(dStr)}
+                      className={`p-2 rounded-xl text-center border transition-all ${
+                        isDateSelected 
+                          ? 'bg-cyan-500 text-white border-cyan-400 shadow-md ring-1 ring-cyan-400' 
+                          : 'bg-[#04162e] text-slate-300 border-[#254a77] hover:border-cyan-500/50'
+                      }`}
+                    >
+                      <div className="text-xs font-bold">{format(d, 'MM/dd')}</div>
+                      <div className="text-[10px] text-cyan-300">{format(d, 'E')}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Select Time (30 min slots) */}
+            {editDate && (
+              <div className="mb-5 animate-fade-in">
+                <label className="block text-xs font-bold text-gray-300 uppercase mb-2">
+                  변경할 상담 시간 선택 (30분 단위)
+                </label>
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                  {[
+                    '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+                    '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
+                  ].map(slotTime => {
+                    const slotStart = new Date(`${editDate}T${slotTime}:00`);
+                    const slotEnd = new Date(slotStart.getTime() + 30 * 60000);
+
+                    const targetCounselorId = editingTicket.counselor_id || (editingTicket as any).assigned_counselor_id;
+
+                    const isBookedEvent = scheduleEvents.some(e => {
+                      if (e.counselorId !== targetCounselorId) return false;
+                      const eStart = safeDate(e.start);
+                      const eEnd = safeDate(e.end);
+                      return (slotStart < eEnd && slotEnd > eStart);
+                    });
+
+                    const isBookedTicket = tickets.some(t => {
+                      if (t.id === editingTicket.id) return false; // exclude current ticket
+                      if ((t.status as string) === '취소' || (t.status as string) === '반려') return false;
+                      const cId = t.counselor_id || (t as any).assigned_counselor_id;
+                      if (cId !== targetCounselorId) return false;
+                      if (!t.reservation_time) return false;
+                      const tStart = safeDate(t.reservation_time);
+                      const tEnd = t.reservation_end_time ? safeDate(t.reservation_end_time) : new Date(tStart.getTime() + 30 * 60000);
+                      return (slotStart < tEnd && slotEnd > tStart);
+                    });
+
+                    const isBooked = isBookedEvent || isBookedTicket;
+                    const isPast = slotStart < new Date();
+                    const isAvailable = !isBooked && !isPast;
+                    const isTimeSelected = editTime === slotTime;
+
+                    return (
+                      <button
+                        key={slotTime}
+                        type="button"
+                        disabled={!isAvailable}
+                        onClick={() => setEditTime(slotTime)}
+                        className={`py-2 px-1 rounded-lg text-xs font-bold transition-all border text-center ${
+                          isTimeSelected
+                            ? 'bg-white text-slate-950 border-white shadow-md ring-1 ring-cyan-400'
+                            : isAvailable
+                              ? 'bg-[#04162e] text-cyan-300 border-[#254a77] hover:bg-cyan-500/20 hover:border-cyan-400'
+                              : 'bg-black/40 text-slate-600 border-white/5 cursor-not-allowed'
+                        }`}
+                      >
+                        {slotTime}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Selection summary */}
+            {editDate && editTime && (
+              <div className="p-3 bg-cyan-950/40 border border-cyan-500/40 rounded-xl text-xs text-cyan-200 mb-5">
+                <span className="font-bold">변경 예정 일시: </span>
+                {editDate} {editTime} ~ {format(new Date(new Date(`${editDate}T${editTime}:00`).getTime() + 30 * 60000), 'HH:mm')} (30분 소요)
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setEditingTicket(null)}
+                className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-semibold text-gray-300 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={!editDate || !editTime || isUpdatingDate}
+                onClick={handleUpdateBookingDate}
+                className="flex-1 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-cyan-900/50"
+              >
+                {isUpdatingDate ? '변경 중...' : '일정 변경 완료'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -675,18 +890,30 @@ export const MobileBooking = () => {
         <div className="glass-panel p-6 md:p-8 w-full animate-fade-in-up space-y-8">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-white mb-4 tracking-tight">{t('step2.title')}</h2>
-            <div className="flex flex-wrap gap-2.5">
-              {CATEGORIES.map(cat => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setCategory(cat)}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${
-                    category === cat 
-                      ? 'bg-white text-slate-950 border-white shadow-md' 
-                      : 'bg-[#04162e]/90 text-slate-200 border-[#254a77] hover:bg-[#082347] hover:text-white'
-                  }`}
-                >{t('category.' + cat as any)}</button>
+            <div className="space-y-4">
+              {CATEGORY_GROUPS.map(group => (
+                <div key={group.group} className="bg-[#031326]/70 border border-[#1e3a5f]/60 rounded-xl p-3.5 shadow-sm">
+                  <div className="text-xs font-bold text-cyan-300 mb-2.5 flex items-center gap-1.5 uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                    <span>{group.group}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {group.items.map(cat => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setCategory(cat)}
+                        className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
+                          category === cat 
+                            ? 'bg-cyan-500 text-white border-cyan-400 shadow-md ring-1 ring-cyan-300 scale-[1.02]' 
+                            : 'bg-[#061830] text-slate-200 border-[#1e3a5f] hover:bg-[#0c2a52] hover:text-white'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -733,14 +960,18 @@ export const MobileBooking = () => {
               </div>
               
               <div className="space-y-2">
-                {['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'].map(time => (
+                {[
+                  '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+                  '12:00', '12:30',
+                  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
+                ].map(time => (
                   <div key={time} className="grid grid-cols-6 gap-2 items-center">
                     <div className="text-center text-xs font-bold text-slate-300">{time}</div>
                     {validDays.map((d, i) => {
                       const dateStr = d.toISOString().split('T')[0];
                       
                       const slotStart = new Date(`${dateStr}T${time}:00`);
-                      const slotEnd = new Date(slotStart.getTime() + 60 * 60000);
+                      const slotEnd = new Date(slotStart.getTime() + 30 * 60000);
                       
                       const isBookedEvent = scheduleEvents.some(e => {
                         if (e.counselorId !== selectedCounselor?.id) return false;
@@ -755,14 +986,16 @@ export const MobileBooking = () => {
                         if (cId !== selectedCounselor?.id) return false;
                         if (!t.reservation_time) return false;
                         const tStart = safeDate(t.reservation_time);
-                        const tEnd = new Date(tStart.getTime() + 60 * 60000); // assume 1 hour duration for ticket reservations
+                        const tEnd = t.reservation_end_time 
+                          ? safeDate(t.reservation_end_time) 
+                          : new Date(tStart.getTime() + 30 * 60000);
                         return (slotStart < tEnd && slotEnd > tStart);
                       });
                       
                       const isBooked = isBookedEvent || isBookedTicket;
                       
                       const isPast = slotStart < new Date();
-                      const isLunch = time === '12:00';
+                      const isLunch = time === '12:00' || time === '12:30';
                       const isAvailable = !isBooked && !isPast && !isLunch;
                       const isSelected = selectedDate === dateStr && selectedTime === time;
 

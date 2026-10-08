@@ -19,22 +19,51 @@ import { HDHyundaiCI } from '../components/HDHyundaiCI';
 import { cleanCountryName } from '../constants';
 
 const getCategoryStyle = (category?: string) => {
-  switch (category) {
+  const cleanCat = category ? category.replace(/^\[[^\]]+\]\s*/, '') : '';
+  switch (cleanCat) {
     case '임금체불':
+    case '임금/4대보험':
       return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
     case '산재/치료':
+    case '산재/사고':
+    case '안전사고':
       return 'bg-red-500/15 text-red-300 border-red-500/30';
+    case '비자':
     case '비자/체류':
       return 'bg-blue-500/15 text-blue-300 border-blue-500/30';
-    case '기숙사/식당/생활':
-    case '기숙사':
-      return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
-    case '업무소통':
+    case '건강/의료':
+      return 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+    case '입사/퇴사':
+    case '이직/해고':
+      return 'bg-orange-500/15 text-orange-300 border-orange-500/30';
+    case '근로계약':
+    case '업무변경':
+    case '근태/휴가/휴직':
+      return 'bg-teal-500/15 text-teal-300 border-teal-500/30';
+    case '사내문제/갈등':
+    case '징계/합의':
+    case '규정위반/범죄':
+      return 'bg-pink-500/15 text-pink-300 border-pink-500/30';
+    case '사회통합/토픽':
+    case '봉사활동':
+    case '사내행사':
+    case '사외행사':
       return 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
+    case '신규입사자/입문교육':
+    case '입문교육/신규입사자':
+    case '직무교육':
+    case '안전교육':
+    case '교육자료 번역':
+    case '안내자료 번역':
+    case '현장점검활동 통역':
+      return 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30';
+    case '숙소/통신/금융':
+    case '기숙사':
+    case '자격면허/보험':
+    case '생활고충상담':
+      return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
     case '정서/심리':
       return 'bg-purple-500/15 text-purple-300 border-purple-500/30';
-    case '법률/행정':
-      return 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30';
     default:
       return 'bg-gray-500/15 text-gray-300 border-gray-500/30';
   }

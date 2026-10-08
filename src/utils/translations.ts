@@ -5,6 +5,26 @@ export const translations = {
     'category.비자/체류': '비자/체류',
     'category.폭언/폭행': '폭언/폭행',
     'category.산재/치료': '산재/치료',
+    'category.산재/사고': '산재/사고',
+    'category.안전사고': '안전사고',
+    'category.입사/퇴사': '입사/퇴사',
+    'category.이직/해고': '이직/해고',
+    'category.임금/4대보험': '임금/4대보험',
+    'category.근로계약': '근로계약',
+    'category.업무변경': '업무변경',
+    'category.근태/휴가/휴직': '근태/휴가/휴직',
+    'category.건강/의료': '건강/의료',
+    'category.사내문제/갈등': '사내문제/갈등',
+    'category.규정위반/범죄': '규정위반/범죄',
+    'category.징계/합의': '징계/합의',
+    'category.비자': '비자',
+    'category.사회통합/토픽': '사회통합/토픽',
+    'category.봉사활동': '봉사활동',
+    'category.사내행사': '사내행사',
+    'category.사외행사': '사외행사',
+    'category.숙소/통신/금융': '숙소/통신/금융',
+    'category.자격면허/보험': '자격면허/보험',
+    'category.생활고충상담': '생활고충상담',
     'category.기숙사': '기숙사',
     'category.정서/심리': '정서/심리',
     'category.기타': '기타',
@@ -475,6 +495,11 @@ export type LanguageCode = keyof typeof translations;
 
 export function useTranslation(lang: LanguageCode) {
   return function t(key: keyof typeof translations['ko']): string {
-    return (translations[lang] as any)?.[key] || translations['ko'][key] || key;
+    const val = (translations[lang] as any)?.[key] || (translations['ko'] as any)?.[key];
+    if (val) return val;
+    if (typeof key === 'string' && key.startsWith('category.')) {
+      return key.replace(/^category\./, '');
+    }
+    return key;
   };
 }

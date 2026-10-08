@@ -34,6 +34,7 @@ export interface CounselingTicket {
   birth_date?: string;
   country?: string;
   visa_type?: string;
+  requester_type?: string; // 근로자 본인 / 직영 부서 / 협력사 담당자 등
   company_code: string;
   counselor_id?: string;
   category: string;

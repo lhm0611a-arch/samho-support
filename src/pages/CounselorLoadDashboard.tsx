@@ -6,7 +6,7 @@ import { useTicketStore } from '../store/ticketStore';
 import { useScheduleStore } from '../store/scheduleStore';
 import { useAuthStore } from '../store/authStore';
 import { useCounselorStore } from '../store/counselorStore';
-import { CATEGORIES, cleanCountryName } from '../constants';
+import { CATEGORIES, cleanCountryName, resolveTicketCategory } from '../constants';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { Users, Clock, Briefcase, Calendar as CalendarIcon, Filter, FileText, X } from 'lucide-react';
 import { format, subDays, isAfter, startOfMonth, isSameDay } from 'date-fns';
@@ -115,7 +115,7 @@ export const CounselorLoadDashboard = () => {
           type: 'counseling',
           date: safeDate(t.reservation_time || t.created_at || Date.now()),
           title: t.summary || '일반 상담',
-          category: t.category || '기타',
+          category: resolveTicketCategory(t),
           durationMinutes: durationMinutes,
           ticket: t
         });

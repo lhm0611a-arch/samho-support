@@ -36,14 +36,6 @@ const DEFAULT_SLIDES: BackgroundSlide[] = [
     createdAt: '2026-01-01T00:00:00.000Z'
   },
   {
-    id: 'yard-bg3',
-    name: 'HD현대삼호 선박 건조 전경 (bg3)',
-    url: '/bg3.png',
-    enabled: true,
-    isDefault: true,
-    createdAt: '2026-01-01T00:00:01.000Z'
-  },
-  {
     id: 'yard-bg4',
     name: 'HD현대삼호 골리앗 크레인 전경 (bg4)',
     url: '/bg4.png',

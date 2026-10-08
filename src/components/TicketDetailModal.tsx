@@ -3,13 +3,13 @@ import { safeDate } from '../utils/safeDate';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { CounselingTicket } from '../types';
-import { X, Check, Mic, Square, Brain, AlertTriangle, Trash2, MessageSquare, Phone } from 'lucide-react';
+import { X, Check, Mic, Square, Brain, AlertTriangle, Trash2, MessageSquare, Phone, Edit2, Save, UserCheck } from 'lucide-react';
 import { useCounselorStore } from '../store/counselorStore';
 import { useFirestore } from '../hooks/useFirestore';
 import { useScheduleStore } from '../store/scheduleStore';
 import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
-import { CATEGORIES, cleanCountryName } from '../constants';
+import { CATEGORIES, CATEGORY_GROUPS, REQUESTER_TYPES, VISA_TYPES, COUNTRIES, cleanCountryName } from '../constants';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { isCounselorId } from '../utils/counselorHelper';
 
@@ -42,9 +42,34 @@ export const TicketDetailModal: React.FC<Props> = ({ ticket: initialTicket, onCl
   const [counselingEndTime, setCounselingEndTime] = useState('');
   const [isEditing, setIsEditing] = useState(false);
 
+  // Worker profile edit state (상담내용 작성 시 인적사항 수정 기능)
+  const [isEditingWorkerInfo, setIsEditingWorkerInfo] = useState(false);
+  const [workerName, setWorkerName] = useState(ticket.worker_name || '');
+  const [phoneNumber, setPhoneNumber] = useState(ticket.phone_number || '');
+  const [visaType, setVisaType] = useState(ticket.visa_type || '');
+  const [customVisa, setCustomVisa] = useState('');
+  const [requesterType, setRequesterType] = useState(ticket.requester_type || '근로자 본인');
+  const [companyCode, setCompanyCode] = useState(ticket.company_code || '');
+  const [country, setCountry] = useState(ticket.country || '');
+  const [isSavingWorkerInfo, setIsSavingWorkerInfo] = useState(false);
+  const [workerSaveSuccess, setWorkerSaveSuccess] = useState(false);
+
   useEffect(() => {
     setSelectedCounselor(ticket.counselor_id || (ticket as any).assigned_counselor_id || '');
     setNotes(ticket.action_result || '');
+    
+    setWorkerName(ticket.worker_name || '');
+    setPhoneNumber(ticket.phone_number || '');
+    if (ticket.visa_type && !VISA_TYPES.includes(ticket.visa_type)) {
+      setVisaType('기타');
+      setCustomVisa(ticket.visa_type);
+    } else {
+      setVisaType(ticket.visa_type || 'E-9');
+      setCustomVisa('');
+    }
+    setRequesterType(ticket.requester_type || '근로자 본인');
+    setCompanyCode(ticket.company_code || '');
+    setCountry(ticket.country || '');
     
     if (ticket.reservation_time) {
       const start = safeDate(ticket.reservation_time);
@@ -61,6 +86,30 @@ export const TicketDetailModal: React.FC<Props> = ({ ticket: initialTicket, onCl
       }
     }
   }, [ticket]);
+
+  const handleSaveWorkerInfo = async () => {
+    if (!ticket.id) return;
+    setIsSavingWorkerInfo(true);
+    const finalVisa = visaType === '기타' ? (customVisa.trim() || '기타') : visaType;
+    try {
+      await updateTicket(ticket.id, {
+        worker_name: workerName.trim(),
+        phone_number: phoneNumber.trim(),
+        visa_type: finalVisa,
+        requester_type: requesterType,
+        company_code: companyCode.trim(),
+        country: country.trim()
+      });
+      setWorkerSaveSuccess(true);
+      setTimeout(() => setWorkerSaveSuccess(false), 2500);
+      setIsEditingWorkerInfo(false);
+    } catch (err) {
+      console.error('Failed to update worker info:', err);
+      alert('인적사항 저장 중 오류가 발생했습니다.');
+    } finally {
+      setIsSavingWorkerInfo(false);
+    }
+  };
 
   const { isRecording, startRecording, stopRecording, audioBlob, setAudioBlob } = useAudioRecorder();
   const [isProcessingAI, setIsProcessingAI] = useState(false);
@@ -175,13 +224,21 @@ export const TicketDetailModal: React.FC<Props> = ({ ticket: initialTicket, onCl
       }
     }
 
+    const finalVisa = visaType === '기타' ? (customVisa.trim() || '기타') : visaType;
+
     await updateTicket(ticket.id!, { 
       status: '처리완료',
       action_result: notes,
       counseling_summary: oneLineSummary,
       reservation_time: finalResTime,
       reservation_end_time: finalResEndTime,
-      counselor_id: selectedCounselor
+      counselor_id: selectedCounselor,
+      worker_name: workerName.trim() || ticket.worker_name,
+      phone_number: phoneNumber.trim() || ticket.phone_number,
+      visa_type: finalVisa || ticket.visa_type,
+      requester_type: requesterType || ticket.requester_type,
+      company_code: companyCode.trim() || ticket.company_code,
+      country: country.trim() || ticket.country
     });
     setIsCompleting(false);
     onClose();
@@ -289,61 +346,231 @@ export const TicketDetailModal: React.FC<Props> = ({ ticket: initialTicket, onCl
         </div>
         
         <div className="p-6 pb-24 md:pb-6 overflow-y-auto flex-1 custom-scrollbar space-y-5 bg-[#08172c]">
-          <div className="grid grid-cols-2 gap-3.5 p-4 rounded-xl bg-[#051326] border border-[#1e3a5f]">
-            <div>
-              <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">근로자</p>
-              <p className="text-[#f8fafc] font-bold text-sm flex items-center gap-1.5">
-                {ticket.worker_name || ticket.worker_id}
-                {ticket.red_flag && ticket.category !== '기타' && (
-                  <span className="type-badge badge-fail text-[10px]">Red Flag</span>
+          {/* Worker Info Card */}
+          <div className="p-4 rounded-xl bg-[#051326] border border-[#1e3a5f] relative">
+            <div className="flex justify-between items-center pb-2.5 mb-3 border-b border-[#1e3a5f]/80">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#38bdf8]"></span>
+                <span className="text-xs font-bold text-[#f8fafc] tracking-wider uppercase">상담 요청자 인적사항</span>
+                {workerSaveSuccess && (
+                  <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1 animate-fade-in">
+                    <Check className="w-3.5 h-3.5" /> 저장 완료
+                  </span>
                 )}
-              </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {!isEditingWorkerInfo ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingWorkerInfo(true)}
+                    className="px-2.5 py-1 bg-cyan-500/15 text-cyan-300 hover:bg-cyan-500/25 border border-cyan-500/30 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                    인적사항 수정
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingWorkerInfo(false)}
+                    className="px-2.5 py-1 bg-white/5 text-gray-300 hover:bg-white/10 rounded-lg text-xs font-medium transition-colors"
+                  >
+                    취소
+                  </button>
+                )}
+              </div>
             </div>
-            <div>
-              <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">핸드폰번호</p>
-              {ticket.phone_number ? (
-                <a href={`tel:${ticket.phone_number}`} className="text-[#38bdf8] hover:underline font-bold text-sm flex items-center gap-1 w-fit">
-                  <Phone className="w-3.5 h-3.5" /> {ticket.phone_number}
-                </a>
-              ) : (
-                <p className="text-[#cbd5e1] font-medium text-sm">-</p>
-              )}
-            </div>
-            <div>
-              <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">접수 일시</p>
-              <p className="text-[#cbd5e1] font-medium text-sm">{ticket.created_at ? safeFormat(ticket.created_at, 'yyyy-MM-dd HH:mm') : '-'}</p>
-            </div>
-            <div>
-              <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">국가</p>
-              <p className="text-[#cbd5e1] font-medium text-sm">{cleanCountryName(ticket.country)}</p>
-            </div>
-            <div>
-              <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">상담 유형</p>
-              <select
-                value={ticket.category || ''}
-                onChange={(e) => {
-                  const newCategory = e.target.value;
-                  const CRITICAL_KEYWORDS = ['임금체불', '폭언', '폭행', '범죄', '퇴사', '산재', '치료', '사망', '사고', '우울', '정서/심리'];
-                  const isRedFlag = newCategory !== '기타' && CRITICAL_KEYWORDS.some(k => newCategory.includes(k));
-                  updateTicket(ticket.id!, { 
-                    category: newCategory,
-                    red_flag: isRedFlag
-                  });
-                }}
-                className="dx-input !py-1 !px-2.5 text-xs text-[#f8fafc] font-semibold cursor-pointer"
-              >
-                <option value="">유형 선택</option>
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">소속 업체</p>
-              <p className="text-[#cbd5e1] font-medium text-sm">{ticket.company_code || '-'}</p>
-            </div>
+
+            {isEditingWorkerInfo ? (
+              /* Inline Edit Mode */
+              <div className="space-y-3.5 animate-fade-in text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[#94a3b8] font-bold mb-1">근로자 이름 <span className="text-red-400">*</span></label>
+                    <input
+                      type="text"
+                      value={workerName}
+                      onChange={e => setWorkerName(e.target.value)}
+                      className="w-full dx-input !py-1.5 !px-3 text-xs text-white"
+                      placeholder="근로자 이름"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#94a3b8] font-bold mb-1">핸드폰번호 <span className="text-red-400">*</span></label>
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={e => setPhoneNumber(e.target.value)}
+                      className="w-full dx-input !py-1.5 !px-3 text-xs text-white"
+                      placeholder="010-0000-0000"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[#94a3b8] font-bold mb-1">상담 요청자 및 대상자 구분</label>
+                    <select
+                      value={requesterType}
+                      onChange={e => setRequesterType(e.target.value)}
+                      className="w-full dx-input !py-1.5 !px-3 text-xs text-white cursor-pointer"
+                    >
+                      {REQUESTER_TYPES.map(rt => (
+                        <option key={rt} value={rt} className="bg-slate-900">{rt}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[#94a3b8] font-bold mb-1">체류자격 (비자 종류)</label>
+                    <div className="flex gap-2">
+                      <select
+                        value={visaType}
+                        onChange={e => setVisaType(e.target.value)}
+                        className="flex-1 dx-input !py-1.5 !px-3 text-xs text-white cursor-pointer"
+                      >
+                        {VISA_TYPES.map(v => (
+                          <option key={v} value={v} className="bg-slate-900">{v}</option>
+                        ))}
+                      </select>
+                      {visaType === '기타' && (
+                        <input
+                          type="text"
+                          value={customVisa}
+                          onChange={e => setCustomVisa(e.target.value)}
+                          className="flex-1 dx-input !py-1.5 !px-2.5 text-xs text-white"
+                          placeholder="비자 직접 입력"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[#94a3b8] font-bold mb-1">소속 업체</label>
+                    <input
+                      type="text"
+                      value={companyCode}
+                      onChange={e => setCompanyCode(e.target.value)}
+                      className="w-full dx-input !py-1.5 !px-3 text-xs text-white"
+                      placeholder="업체명 또는 부서명"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#94a3b8] font-bold mb-1">국가</label>
+                    <select
+                      value={country}
+                      onChange={e => setCountry(e.target.value)}
+                      className="w-full dx-input !py-1.5 !px-3 text-xs text-white cursor-pointer"
+                    >
+                      <option value="">국가 선택</option>
+                      {COUNTRIES.map(c => (
+                        <option key={c} value={c} className="bg-slate-900">{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingWorkerInfo(false)}
+                    className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg text-xs font-semibold transition-colors"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isSavingWorkerInfo}
+                    onClick={handleSaveWorkerInfo}
+                    className="dx-btn-primary !py-1.5 !px-4 text-xs font-bold flex items-center gap-1.5"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    {isSavingWorkerInfo ? '저장 중...' : '인적사항 저장하기'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* View Mode */
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                <div>
+                  <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">근로자</p>
+                  <p className="text-[#f8fafc] font-bold text-sm flex items-center gap-1.5">
+                    {ticket.worker_name || ticket.worker_id}
+                    {ticket.red_flag && ticket.category !== '기타' && (
+                      <span className="type-badge badge-fail text-[10px]">Red Flag</span>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">핸드폰번호</p>
+                  {ticket.phone_number ? (
+                    <a href={`tel:${ticket.phone_number}`} className="text-[#38bdf8] hover:underline font-bold text-sm flex items-center gap-1 w-fit">
+                      <Phone className="w-3.5 h-3.5" /> {ticket.phone_number}
+                    </a>
+                  ) : (
+                    <p className="text-[#cbd5e1] font-medium text-sm text-yellow-400/80">미등록 (수정 필요)</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">체류자격 (비자)</p>
+                  <p className="text-cyan-300 font-bold text-sm">
+                    {ticket.visa_type || <span className="text-gray-500 font-normal">-</span>}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">상담 요청자 구분</p>
+                  <p className="text-[#cbd5e1] font-medium text-sm">
+                    {ticket.requester_type || '근로자 본인'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">국가</p>
+                  <p className="text-[#cbd5e1] font-medium text-sm">{cleanCountryName(ticket.country)}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">소속 업체</p>
+                  <p className="text-[#cbd5e1] font-medium text-sm">{ticket.company_code || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">접수 일시</p>
+                  <p className="text-[#cbd5e1] font-medium text-sm">{ticket.created_at ? safeFormat(ticket.created_at, 'yyyy-MM-dd HH:mm') : '-'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[11px] md:text-xs text-[#94a3b8] font-bold tracking-wide uppercase mb-0.5">상담 유형</p>
+                  <select
+                    value={ticket.category || ''}
+                    onChange={(e) => {
+                      const newCategory = e.target.value;
+                      const CRITICAL_KEYWORDS = ['임금체불', '폭언', '폭행', '범죄', '퇴사', '산재', '치료', '사망', '사고', '안전사고', '우울', '정서/심리'];
+                      const isRedFlag = newCategory !== '기타' && CRITICAL_KEYWORDS.some(k => newCategory.includes(k));
+                      updateTicket(ticket.id!, { 
+                        category: newCategory,
+                        red_flag: isRedFlag
+                      });
+                    }}
+                    className="dx-input !py-1 !px-2.5 text-xs text-[#f8fafc] font-semibold cursor-pointer w-full"
+                  >
+                    <option value="">유형 선택</option>
+                    {/* Support existing legacy category value if not matched */}
+                    {ticket.category && !CATEGORIES.includes(ticket.category) && (
+                      <option value={ticket.category}>{ticket.category}</option>
+                    )}
+                    {CATEGORY_GROUPS.map(group => (
+                      <optgroup key={group.group} label={group.group} className="bg-slate-900 text-cyan-300 font-bold">
+                        {group.items.map(c => (
+                          <option key={c} value={c} className="bg-slate-800 text-white font-normal">
+                            {c}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
             {ticket.summary && (
-              <div className="col-span-2 mt-1">
+              <div className="mt-3 pt-3 border-t border-[#1e3a5f]/60">
                 <p className="text-[11px] md:text-xs text-[#38bdf8] font-bold tracking-wide uppercase mb-1.5 flex items-center gap-1.5">
                   <Brain className="w-3.5 h-3.5 text-[#38bdf8]" />
                   예약/상담 신청 내용 (AI 요약 포함)
@@ -354,7 +581,7 @@ export const TicketDetailModal: React.FC<Props> = ({ ticket: initialTicket, onCl
               </div>
             )}
             {ticket.required_action && (
-              <div className="col-span-2 mt-1">
+              <div className="mt-3">
                 <p className="text-[11px] md:text-xs text-[#f87171] font-bold tracking-wide uppercase mb-1.5 flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5 text-[#f87171]" />
                   필요 조치 사항 (AI 분석)

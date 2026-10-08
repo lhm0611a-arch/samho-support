@@ -7,7 +7,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { useAuthStore } from '../store/authStore';
 import { Calendar as CalendarIcon, AlertTriangle, User, X } from 'lucide-react';
-import { DUMMY_COMPANIES, CATEGORIES, COUNTRY_COLORS, cleanCountryName } from '../constants';
+import { DUMMY_COMPANIES, CATEGORIES, CATEGORY_GROUPS, REQUESTER_TYPES, WORK_DUTY_TYPES, VISA_TYPES, COUNTRY_COLORS, cleanCountryName } from '../constants';
 import { useScheduleStore } from '../store/scheduleStore';
 import { useTicketStore } from '../store/ticketStore';
 import { useCounselorStore } from '../store/counselorStore';
@@ -46,14 +46,12 @@ export const ScheduleManager = () => {
   const [eventTitle, setEventTitle] = useState('');
   const [eventStartTime, setEventStartTime] = useState('09:00');
   const [eventEndTime, setEventEndTime] = useState('17:00');
-  const [isAllDay, setIsAllDay] = useState(false);
 
   const durationHours = useMemo(() => {
-    if (isAllDay) return 0;
     const [sH, sM] = eventStartTime.split(':').map(Number);
     const [eH, eM] = eventEndTime.split(':').map(Number);
     return (eH - sH) + (eM - sM) / 60;
-  }, [isAllDay, eventStartTime, eventEndTime]);
+  }, [eventStartTime, eventEndTime]);
 
   const isHalfDay = durationHours === 4;
 
@@ -72,6 +70,10 @@ export const ScheduleManager = () => {
   // Emergency walk-in modal state
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
   const [emWorkerName, setEmWorkerName] = useState('');
+  const [emPhoneNumber, setEmPhoneNumber] = useState('');
+  const [emRequesterType, setEmRequesterType] = useState('근로자 본인');
+  const [emVisaType, setEmVisaType] = useState('E-9');
+  const [emCustomVisa, setEmCustomVisa] = useState('');
   const [emOrgType, setEmOrgType] = useState<'subcontractor' | 'direct'>('subcontractor');
   const [subcontractorsList, setSubcontractorsList] = useState<string[]>([]);
   const [directOrgsList, setDirectOrgsList] = useState<string[]>([]);
@@ -229,20 +231,12 @@ export const ScheduleManager = () => {
     
     const startDt = selectInfo.startStr;
     const endDt = selectInfo.endStr;
-    const isAllDaySelection = selectInfo.allDay;
     
-    setIsAllDay(isAllDaySelection);
-
-    if (!isAllDaySelection) {
-      const timePart = startDt.split('T')[1];
-      if (timePart) {
-        setEventStartTime(timePart.substring(0, 5));
-        setEventEndTime(endDt ? endDt.split('T')[1].substring(0, 5) : timePart.substring(0, 5));
-      }
-    } else {
-      setEventStartTime('09:00');
-      setEventEndTime('17:00');
-    }
+    const timePart = startDt.includes('T') ? startDt.split('T')[1].substring(0, 5) : '09:00';
+    const endTimePart = endDt && endDt.includes('T') ? endDt.split('T')[1].substring(0, 5) : '17:00';
+    
+    setEventStartTime(timePart || '09:00');
+    setEventEndTime(endTimePart || '17:00');
 
     setPendingEventRange({
       startStr: startDt.split('T')[0], // just the date part
@@ -270,22 +264,11 @@ export const ScheduleManager = () => {
       ? (role === 'counselor' && user?.uid ? user.uid : counselors.find(c => c.country !== '한국' && !c.id.toLowerCase().startsWith('admin'))?.id)
       : selectedCounselorId;
     
-    let finalStartStr, finalEndStr;
-    let checkStart, checkEnd;
-
     const baseDate = pendingEventRange.startStr;
-
-    if (isAllDay) {
-      finalStartStr = baseDate;
-      finalEndStr = format(addMinutes(new Date(baseDate + 'T00:00:00'), 24 * 60), 'yyyy-MM-dd');
-      checkStart = new Date(baseDate + 'T00:00:00');
-      checkEnd = new Date(baseDate + 'T23:59:59'); 
-    } else {
-      finalStartStr = baseDate + 'T' + eventStartTime;
-      finalEndStr = baseDate + 'T' + eventEndTime;
-      checkStart = new Date(finalStartStr);
-      checkEnd = new Date(finalEndStr);
-    }
+    const finalStartStr = baseDate + 'T' + eventStartTime;
+    const finalEndStr = baseDate + 'T' + eventEndTime;
+    const checkStart = new Date(finalStartStr);
+    const checkEnd = new Date(finalEndStr);
 
     if (checkStart >= checkEnd) {
       alert("종료 시간이 시작 시간보다 빠를 수 없습니다.");
@@ -324,26 +307,34 @@ export const ScheduleManager = () => {
       alert('근로자 이름을 입력해주세요.');
       return;
     }
+    if (!emPhoneNumber.trim()) {
+      alert('연락처(핸드폰번호)를 입력해주세요.');
+      return;
+    }
     
     const selectedC = counselors.find(c => c.id === emCounselor);
+    const finalVisa = emVisaType === '기타' ? (emCustomVisa.trim() || '기타') : emVisaType;
     
     const ticketId = 'walk-in-' + Date.now();
     const now = emReservationTime ? safeDate(emReservationTime) : new Date();
-    const endNow = emReservationEndTime ? safeDate(emReservationEndTime) : addMinutes(now, 60);
+    const endNow = emReservationEndTime ? safeDate(emReservationEndTime) : addMinutes(now, 30);
     
-    const CRITICAL_KEYWORDS = ['임금체불', '폭언', '폭행', '범죄', '퇴사', '산재', '치료', '사망', '사고', '우울', '정서/심리'];
+    const CRITICAL_KEYWORDS = ['임금체불', '폭언', '폭행', '범죄', '퇴사', '산재', '치료', '사망', '사고', '안전사고', '우울', '정서/심리'];
     const isRedFlag = CRITICAL_KEYWORDS.some(k => emCategory.includes(k));
     
-    const newTicket = {
+    const newTicket: CounselingTicket = {
       worker_id: ticketId,
-      worker_name: emWorkerName,
+      worker_name: emWorkerName.trim(),
+      phone_number: emPhoneNumber.trim(),
+      requester_type: emRequesterType,
+      visa_type: finalVisa,
       company_code: emCompany,
       category: emCategory,
       country: selectedC?.country || '',
-      status: '배정완료' as any,
-      summary: '긴급 현장 접수',
-      urgency: 'high' as any,
-      required_action: '즉시 상담 필요',
+      status: '배정완료',
+      summary: `[긴급 현장 접수] 요청자: ${emRequesterType} | 연락처: ${emPhoneNumber} | 비자: ${finalVisa}`,
+      urgency: 'high',
+      required_action: '즉시 상담 및 조치 필요',
       red_flag: isRedFlag,
       reservation_time: now.toISOString(),
       reservation_end_time: endNow.toISOString(),
@@ -367,9 +358,13 @@ export const ScheduleManager = () => {
       console.error('Failed to send emergency assignment notification:', err);
     }
     
-    alert('긴급 상담이 접수/배정 되었습니다.');
+    alert('긴급 상담이 성공적으로 접수/배정 되었습니다.');
     setIsEmergencyModalOpen(false);
     setEmWorkerName('');
+    setEmPhoneNumber('');
+    setEmRequesterType('근로자 본인');
+    setEmVisaType('E-9');
+    setEmCustomVisa('');
     setEmReservationTime('');
     setEmReservationEndTime('');
   };
@@ -695,13 +690,9 @@ export const ScheduleManager = () => {
                 onChange={e => setEventType(e.target.value)}
                 className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors appearance-none mb-4"
               >
-                <option value="연차" className="bg-apple-dark">연차</option>
-                {isHalfDay && <option value="반차" className="bg-apple-dark">반차</option>}
-                <option value="교육통역" className="bg-apple-dark">교육통역</option>
-                <option value="번역업무" className="bg-apple-dark">번역업무</option>
-                <option value="현장지원" className="bg-apple-dark">현장지원</option>
-                <option value="외근" className="bg-apple-dark">외근</option>
-                <option value="기타" className="bg-apple-dark">기타 (직접 입력)</option>
+                {WORK_DUTY_TYPES.map(wt => (
+                  <option key={wt} value={wt} className="bg-apple-dark">{wt}</option>
+                ))}
               </select>
               
               {eventType !== '연차' && eventType !== '반차' && (
@@ -712,41 +703,35 @@ export const ScheduleManager = () => {
                     value={eventTitle}
                     onChange={e => setEventTitle(e.target.value)}
                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
-                    placeholder="세부 업무 내용을 입력하세요 (예: 기술교육원 통역)"
+                    placeholder="세부 업무 내용을 입력하세요 (예: 기술교육원 안전교육 통역)"
                     autoFocus
                   />
                 </div>
               )}
               
               <div className="mb-4">
-                <label className="flex items-center gap-2 text-sm text-white mb-2 cursor-pointer">
-                  <input type="checkbox" checked={isAllDay} onChange={e => setIsAllDay(e.target.checked)} className="rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-blue-500" />
-                  하루 종일
-                </label>
-                {!isAllDay && (
-                  <div className="grid grid-cols-2 gap-3 mt-3">
-                    <div>
-                      <label className="block text-xs text-gray-400 mb-1">시작 시간</label>
-                      <select 
-                        value={eventStartTime}
-                        onChange={e => setEventStartTime(e.target.value)}
-                        className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors appearance-none"
-                      >
-                        {TIME_OPTIONS.map(t => <option key={t} value={t} className="bg-apple-dark">{t}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-400 mb-1">종료 시간</label>
-                      <select 
-                        value={eventEndTime}
-                        onChange={e => setEventEndTime(e.target.value)}
-                        className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors appearance-none"
-                      >
-                        {TIME_OPTIONS.map(t => <option key={t} value={t} className="bg-apple-dark">{t}</option>)}
-                      </select>
-                    </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">시작 시간</label>
+                    <select 
+                      value={eventStartTime}
+                      onChange={e => setEventStartTime(e.target.value)}
+                      className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors appearance-none"
+                    >
+                      {TIME_OPTIONS.map(t => <option key={t} value={t} className="bg-apple-dark">{t}</option>)}
+                    </select>
                   </div>
-                )}
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">종료 시간</label>
+                    <select 
+                      value={eventEndTime}
+                      onChange={e => setEventEndTime(e.target.value)}
+                      className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors appearance-none"
+                    >
+                      {TIME_OPTIONS.map(t => <option key={t} value={t} className="bg-apple-dark">{t}</option>)}
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-6 flex gap-3">
@@ -761,16 +746,42 @@ export const ScheduleManager = () => {
       {/* Emergency Modal */}
       {isEmergencyModalOpen && (
         <div className="fixed top-0 left-0 w-full h-[100dvh] bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-apple-gray/90 border border-apple-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up">
-            <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center">
+          <div className="bg-apple-gray/90 border border-apple-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-fade-in-up">
+            <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center sticky top-0 bg-apple-gray/95 backdrop-blur-md z-10">
               <h3 className="font-semibold text-white flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-red-400"/> 긴급 상담 생성</h3>
               <button onClick={() => setIsEmergencyModalOpen(false)} className="text-gray-400 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6 space-y-4">
+              {/* 상담 요청자 및 대상자의 구분 */}
               <div>
-                <label className="block text-sm text-gray-400 mb-1">근로자 이름</label>
+                <label className="block text-sm font-semibold text-gray-300 mb-1.5">
+                  상담 요청자 및 대상자 구분 <span className="text-red-400">*</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {REQUESTER_TYPES.map(reqType => (
+                    <button
+                      key={reqType}
+                      type="button"
+                      onClick={() => setEmRequesterType(reqType)}
+                      className={`py-2 px-2 rounded-xl text-xs font-semibold border transition-all text-center ${
+                        emRequesterType === reqType
+                          ? 'bg-red-500 text-white border-red-400 shadow-md'
+                          : 'bg-black/30 text-gray-300 border-white/10 hover:bg-white/10'
+                      }`}
+                    >
+                      {reqType}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 근로자 이름 */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-1">
+                  근로자 이름 (상담 대상자) <span className="text-red-400">*</span>
+                </label>
                 <input 
                   type="text" 
                   value={emWorkerName}
@@ -778,6 +789,63 @@ export const ScheduleManager = () => {
                   className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-red-500 transition-colors"
                   placeholder="근로자 이름 입력"
                 />
+              </div>
+
+              {/* 연락처 (핸드폰번호) */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-1">
+                  연락처 (핸드폰번호) <span className="text-red-400">*</span>
+                </label>
+                <input 
+                  type="tel" 
+                  value={emPhoneNumber}
+                  onChange={e => {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    let res = val;
+                    if (val.length > 3 && val.length <= 7) {
+                      res = `${val.slice(0, 3)}-${val.slice(3)}`;
+                    } else if (val.length > 7 && val.length < 11) {
+                      res = `${val.slice(0, 3)}-${val.slice(3, 6)}-${val.slice(6)}`;
+                    } else if (val.length >= 11) {
+                      res = `${val.slice(0, 3)}-${val.slice(3, 7)}-${val.slice(7, 11)}`;
+                    }
+                    setEmPhoneNumber(res);
+                  }}
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-red-500 transition-colors"
+                  placeholder="010-0000-0000"
+                />
+              </div>
+
+              {/* 체류자격 (비자 종류) */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-1.5">
+                  체류자격 (비자 종류) <span className="text-red-400">*</span>
+                </label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {VISA_TYPES.map(v => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setEmVisaType(v)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                        emVisaType === v
+                          ? 'bg-red-500 text-white border-red-400 shadow-sm'
+                          : 'bg-black/30 text-gray-300 border-white/10 hover:bg-white/10'
+                      }`}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+                {emVisaType === '기타' && (
+                  <input
+                    type="text"
+                    value={emCustomVisa}
+                    onChange={e => setEmCustomVisa(e.target.value)}
+                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+                    placeholder="비자 종류를 직접 입력하세요 (예: F-2-7)"
+                  />
+                )}
               </div>
               
               <div>
@@ -833,15 +901,22 @@ export const ScheduleManager = () => {
                 )}
               </div>
 
-
               <div>
                 <label className="block text-sm text-gray-400 mb-1">상담 유형</label>
                 <select 
                   value={emCategory}
                   onChange={e => setEmCategory(e.target.value)}
-                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-red-500 transition-colors appearance-none"
+                  className="w-full bg-[#031326] border border-cyan-500/30 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyan-400 transition-colors"
                 >
-                  {CATEGORIES.map(c => <option key={c} value={c} className="bg-apple-dark">{c}</option>)}
+                  {CATEGORY_GROUPS.map(group => (
+                    <optgroup key={group.group} label={group.group} className="bg-[#031326] text-cyan-300 font-bold">
+                      {group.items.map(c => (
+                        <option key={c} value={c} className="bg-slate-900 text-white font-normal">
+                          {c}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
                 </select>
               </div>
               

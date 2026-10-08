@@ -561,17 +561,22 @@ async function generateDailyInsights(reportType: 'daily' | 'weekly' | 'monthly' 
     const redFlags = recentTickets.filter(t => t.red_flag).length;
     
     const COUNTRIES = ['베트남', '우즈베키스탄', '캄보디아', '네팔', '인도네시아', '태국', '몽골', '필리핀', '기타'];
-    const CATEGORIES = ['임금/근로조건', '비자/체류', '산업안전/보건', '기숙사/식사', '정서/심리', '행정/생활', '기타'];
     
     const byCountry = COUNTRIES.map(country => {
       const count = recentTickets.filter(t => t.country === country).length;
       return { name: country, count };
     }).filter(item => item.count > 0);
 
-    const byCategory = CATEGORIES.map(category => {
-      const count = recentTickets.filter(t => t.category === category).length;
-      return { name: category, count };
-    }).filter(item => item.count > 0);
+    // Group tickets by resolved category dynamically
+    const categoryCountMap: Record<string, number> = {};
+    recentTickets.forEach(t => {
+      const cat = (t.category || '기타').trim();
+      categoryCountMap[cat] = (categoryCountMap[cat] || 0) + 1;
+    });
+
+    const byCategory = Object.entries(categoryCountMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
     
     // Extract actual content for Gemini
     // Only include completed counseling cases (실제 수행한 실적 건만)
@@ -1516,9 +1521,16 @@ function loadBgSlidesConfig(): BgSlidesConfig {
         // Merge disk slides so that any newly added images on GitHub/public are NEVER lost
         const savedSlides: SlideConfigItem[] = parsed.slides;
         const merged: SlideConfigItem[] = [];
+        const publicDir = path.join(process.cwd(), 'public');
 
-        // Add saved slides
+        // Add saved slides that still exist on disk
         for (const s of savedSlides) {
+          if (s.url && s.url.startsWith('/') && !s.url.startsWith('http')) {
+            const localPath = path.join(publicDir, s.url.substring(1));
+            if (!fs.existsSync(localPath)) {
+              continue; // Skip deleted file
+            }
+          }
           merged.push(s);
         }
 

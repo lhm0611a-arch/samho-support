@@ -5,7 +5,7 @@ import { useTicketStore } from '../store/ticketStore';
 import { useCounselorStore } from '../store/counselorStore';
 import { useScheduleStore } from '../store/scheduleStore';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
-import { COUNTRIES, CATEGORIES, cleanCountryName } from '../constants';
+import { COUNTRIES, CATEGORIES, cleanCountryName, resolveTicketCategory } from '../constants';
 import { Brain, TrendingUp, AlertTriangle, Users, Download, Calendar, X, FileText, Mail, Printer } from 'lucide-react';
 import { format, subDays, isSameDay, startOfYear, startOfMonth, subMonths, isAfter } from 'date-fns';
 import Markdown from 'react-markdown';
@@ -92,9 +92,18 @@ export const StatisticsDashboard = () => {
     }).filter(item => item.count > 0);
 
     const byCategory = CATEGORIES.map(category => {
-      const count = filteredTickets.filter(t => t.category === category).length;
-      return { name: category, count };
-    }).filter(item => item.count > 0);
+      const baseName = category.replace(/^\[[^\]]+\]\s*/, '');
+      const count = filteredTickets.filter(t => {
+        const resolved = resolveTicketCategory(t);
+        return resolved === category || resolved === baseName;
+      }).length;
+      return { 
+        name: category,
+        displayName: baseName, // 차트 Y축에 표시할 깔끔한 소분류명
+        fullName: category, 
+        count 
+      };
+    }).filter(item => item.count > 0).sort((a, b) => b.count - a.count);
 
     const completed = filteredTickets.filter(t => t.status === '처리완료').length;
     const total = filteredTickets.length;
@@ -108,7 +117,7 @@ export const StatisticsDashboard = () => {
       .map(t => ({
         업체명: t.company_code || '미상',
         이름: t.worker_name || '익명',
-        카테고리: t.category,
+        카테고리: resolveTicketCategory(t),
         긴급여부: t.red_flag ? '예 (민감/위험)' : '아니오',
         상담내용_및_결과: t.action_result || (t.ai_summary ? (t.ai_summary as any).summary_text : '') || t.summary || ''
       }));
@@ -369,20 +378,35 @@ export const StatisticsDashboard = () => {
         </div>
 
         {/* Category Bar Chart */}
-        <div className="glass-panel p-4 md:p-5 flex flex-col min-h-[260px]">
-          <h3 className="text-sm font-medium text-gray-200 mb-4">분야별 상담 비중 (AI 분류)</h3>
-          <div className="flex-1 w-full h-full relative">
+        <div className="glass-panel p-4 md:p-5 flex flex-col min-h-[300px]">
+          <h3 className="text-sm font-medium text-gray-200 mb-4 flex items-center justify-between">
+            <span>분야별 상담 비중 (AI 분류)</span>
+            <span className="text-[11px] text-cyan-400 font-normal">총 {stats.byCategory.reduce((acc, cur) => acc + cur.count, 0)}건 집계</span>
+          </h3>
+          <div className="flex-1 w-full h-full relative min-h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart layout="vertical" data={stats.byCategory} margin={{ top: 0, right: 20, left: 30, bottom: 0 }}>
+              <BarChart layout="vertical" data={stats.byCategory} margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                <XAxis type="number" stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis dataKey="name" type="category" stroke="#e5e7eb" fontSize={11} tickLine={false} axisLine={false} width={80} />
+                <XAxis type="number" stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                <YAxis 
+                  dataKey="displayName" 
+                  type="category" 
+                  stroke="#e5e7eb" 
+                  fontSize={11} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  width={95}
+                />
                 <RechartsTooltip 
                   cursor={{ fill: 'rgba(255,255,255,0.05)' }} 
-                  contentStyle={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                  contentStyle={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderColor: 'rgba(56, 189, 248, 0.3)', borderRadius: '8px' }}
                   itemStyle={{ color: '#fff', fontSize: '12px' }}
+                  formatter={(value: any, _name: any, item: any) => [
+                    `${value}건 (${stats.total > 0 ? Math.round((Number(value) / stats.total) * 100) : 0}%)`,
+                    item.payload.fullName || item.payload.name
+                  ]}
                 />
-                <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={24} name="상담 건수">
+                <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={20} name="상담 건수">
                   {stats.byCategory.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                   ))}

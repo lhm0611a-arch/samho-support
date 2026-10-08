@@ -219,12 +219,12 @@ export const Chatbot = ({ inline }: { inline?: boolean }) => {
             )}
             
             {language && !category && messages.length === 3 && (
-              <div className="flex flex-wrap gap-2 mt-2 mr-auto max-w-[85%]">
+              <div className="flex flex-wrap gap-1.5 mt-2 mr-auto max-w-[95%] max-h-60 overflow-y-auto p-1 bg-black/20 rounded-xl border border-white/5 custom-scrollbar">
                 {CATEGORIES.map(c => (
                   <button
                     key={c}
                     onClick={() => handleCategorySelect(c)}
-                    className="px-3 py-1.5 bg-[#002c5f]/70 hover:bg-[#003b80] border border-[#1e3a5f] hover:border-cyan-400 text-cyan-300 rounded-xl text-xs transition-colors"
+                    className="px-2.5 py-1.5 bg-[#002c5f]/70 hover:bg-[#003b80] border border-[#1e3a5f] hover:border-cyan-400 text-cyan-300 rounded-lg text-xs font-medium transition-colors"
                   >{language && CATEGORY_TRANSLATIONS[c]?.[language] ? CATEGORY_TRANSLATIONS[c][language] : c}</button>
                 ))}
               </div>
